@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "248321898441",
+    "project_id": "neurodyx-e262d",
+    "storage_bucket": "neurodyx-e262d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:248321898441:android:6604657023976bdfc11a18",
+        "android_client_info": {
+          "package_name": "com.example.neurodyx"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFA1H0zNgAWgDxTiZvYJPd3CsJiwDgi4I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
