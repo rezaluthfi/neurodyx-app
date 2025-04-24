@@ -63,6 +63,9 @@ class DefaultFirebaseOptions {
     messagingSenderId: '248321898441',
     projectId: 'neurodyx-e262d',
     storageBucket: 'neurodyx-e262d.firebasestorage.app',
+    androidClientId: '248321898441-hq4d8rseog51o9u2tc8dsrjkp9958ope.apps.googleusercontent.com',
+    iosClientId: '248321898441-gmucdshfjhmbhhl7n3odqsrpccgq2385.apps.googleusercontent.com',
     iosBundleId: 'com.example.neurodyx',
   );
+
 }

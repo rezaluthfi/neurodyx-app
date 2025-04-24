@@ -2,6 +2,8 @@ import 'package:flutter/material.dart' hide BoxDecoration, BoxShadow;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_inset_box_shadow/flutter_inset_box_shadow.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../features/auth/presentation/pages/login_page.dart';
+import '../../../../features/auth/presentation/pages/register_page.dart';
 
 class FinalOnboardingScreen extends StatelessWidget {
   final VoidCallback onCreateAccount;
@@ -79,7 +81,13 @@ class FinalOnboardingScreen extends StatelessWidget {
                 ],
               ),
               child: ElevatedButton(
-                onPressed: onCreateAccount,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const RegisterPage()),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
@@ -105,7 +113,12 @@ class FinalOnboardingScreen extends StatelessWidget {
               width: double.infinity,
               height: 56,
               child: OutlinedButton(
-                onPressed: onLogin,
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                },
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Colors.white, width: 1),
                   shape: RoundedRectangleBorder(

@@ -12,7 +12,20 @@
           "package_name": "com.example.neurodyx"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "248321898441-hq4d8rseog51o9u2tc8dsrjkp9958ope.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.neurodyx",
+            "certificate_hash": "0aa816981d083cf7e2b43b81a4cdd2c9fb0b4439"
+          }
+        },
+        {
+          "client_id": "248321898441-58gde0gbnln0jj4bek05r5bpmrvi72uc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCFA1H0zNgAWgDxTiZvYJPd3CsJiwDgi4I"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "248321898441-58gde0gbnln0jj4bek05r5bpmrvi72uc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "248321898441-gmucdshfjhmbhhl7n3odqsrpccgq2385.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.neurodyx"
+              }
+            }
+          ]
         }
       }
     }
