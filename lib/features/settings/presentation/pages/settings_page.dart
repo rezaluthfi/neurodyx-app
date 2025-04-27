@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/providers/font_providers.dart'; // Impor FontProvider
+import '../../../../core/providers/font_providers.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../auth/presentation/pages/login_page.dart';
 
@@ -11,13 +11,12 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    final fontProvider =
-        Provider.of<FontProvider>(context); // Gunakan FontProvider
+    final fontProvider = Provider.of<FontProvider>(context);
 
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -30,6 +29,7 @@ class SettingsPage extends StatelessWidget {
                   color: AppColors.textPrimary,
                 ),
               ),
+
               const SizedBox(height: 24),
 
               // "Font" Option
@@ -130,6 +130,7 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 16),
 
               // "Log Out" Option

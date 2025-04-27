@@ -33,12 +33,11 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.offWhite,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -67,6 +66,7 @@ class _HomePageState extends State<HomePage> {
                     fontSize: 16,
                   ),
                 ),
+
                 const SizedBox(height: 24),
 
                 // Card 1: Get to Know Dyslexia
@@ -95,6 +95,7 @@ class _HomePageState extends State<HomePage> {
                     // Add navigation or logic for "Check"
                   },
                 ),
+
                 const SizedBox(height: 16),
 
                 // Card 3: Multisensory Therapy Plan
@@ -109,6 +110,7 @@ class _HomePageState extends State<HomePage> {
                     // Add navigation or logic for "Start"
                   },
                 ),
+
                 const SizedBox(height: 16),
 
                 // Card 4: See Your Progress!

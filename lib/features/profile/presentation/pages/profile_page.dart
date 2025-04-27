@@ -25,19 +25,23 @@ class ProfilePage extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Title
               const Text(
                 'My Profile',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
-                  color: Colors.black87,
+                  color: AppColors.textPrimary,
                 ),
               ),
+
               const SizedBox(height: 24),
+
+              // Profile Picture
               Stack(
                 alignment: Alignment.bottomRight,
                 children: [
@@ -47,6 +51,8 @@ class ProfilePage extends StatelessWidget {
                       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80',
                     ),
                   ),
+
+                  // Edit Profile Picture Button (Camera Icon)
                   Positioned(
                     bottom: 0,
                     right: 0,
@@ -54,7 +60,7 @@ class ProfilePage extends StatelessWidget {
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Color(0xFF8B5CF6),
+                        color: AppColors.primary,
                       ),
                       child: const Icon(
                         Icons.camera_alt,
@@ -65,7 +71,10 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ],
               ),
+
               const SizedBox(height: 32),
+
+              // Username
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -82,7 +91,10 @@ class ProfilePage extends StatelessWidget {
                 initialValue: username,
                 readOnly: true,
               ),
+
               const SizedBox(height: 16),
+
+              // Email
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -99,7 +111,10 @@ class ProfilePage extends StatelessWidget {
                 initialValue: obscureEmail(user?.email),
                 readOnly: true,
               ),
+
               const SizedBox(height: 16),
+
+              // Password
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -111,11 +126,14 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 8),
+
+              // Password
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  CustomTextField(
+                  const CustomTextField(
                     initialValue: '******',
                     readOnly: true,
                   ),
@@ -129,11 +147,12 @@ class ProfilePage extends StatelessWidget {
                         ),
                       );
                     },
+                    // Change password text button
                     child: const Text(
                       'change password',
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.blue,
+                        color: AppColors.blue,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

@@ -60,7 +60,7 @@ class AuthProvider with ChangeNotifier {
     try {
       final currentUser = await _authRepository.currentUser;
       if (currentUser != null) {
-        // Implementasi untuk cek apakah user berasal dari Google
+        // Implementation to check if the user is from Google
         return await _authRepository.isUserFromGoogle();
       }
       return false;
@@ -108,8 +108,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> reauthenticateWithGoogle() async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
-      final GoogleSignInAccount? googleUser =
-          await googleSignIn.signIn(); // <-- HARUS .signIn(), bukan silent
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         // User canceled the sign-in
         return false;
@@ -200,16 +199,16 @@ class AuthProvider with ChangeNotifier {
       _status = AuthStatus.authenticating;
       notifyListeners();
 
-      // Cek apakah user menggunakan Google
+      // Check if the user is a Google user
       bool isGoogle = await isGoogleUser();
 
       if (isGoogle) {
-        // Jika pengguna Google, kita perlu melakukan re-authentication
+        // If the user is a Google user, we need to reauthenticate with Google
         await _authRepository.reauthenticateWithGoogle();
         await _authRepository.changePassword(
-            '', newPassword); // Password lama diabaikan untuk pengguna Google
+            '', newPassword); // Old password is not needed for Google users
       } else {
-        // Jika bukan pengguna Google, kita butuh password lama untuk mengganti password
+        // If the user is not a Google user, we can change the password directly
         if (oldPassword.isEmpty) {
           throw Exception('Current password is required');
         }

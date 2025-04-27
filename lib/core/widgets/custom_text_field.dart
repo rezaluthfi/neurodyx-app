@@ -47,7 +47,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Label (jika ada)
+        // Label (if provided)
         if (widget.label != null)
           Text(
             widget.label!,

@@ -9,7 +9,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/connectivity_service.dart';
-import '../../../home/presentation/pages/home_page.dart';
 import '../providers/auth_provider.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import 'forgot_password_page.dart';

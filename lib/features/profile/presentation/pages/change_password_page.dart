@@ -88,11 +88,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
             type: SnackBarType.error,
           );
 
-          // Lakukan reauthentikasi dengan Google
+          // Reauthenticate with Google
           success = await authProvider.reauthenticateWithGoogle();
 
           if (success) {
-            // Coba ubah password lagi setelah reauthentikasi
+            // Change password again after reauthentication
             success = await authProvider.changePassword('', newPassword);
           }
         }
@@ -142,7 +142,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           child: Form(
             key: _formKey,
             child: Column(
