@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../domain/entities/user_entity.dart';
 
@@ -16,6 +18,9 @@ class AuthProvider with ChangeNotifier {
   UserEntity? _user;
   String _errorMessage = '';
   bool _isLoading = false;
+
+  // FirebaseAuth instance
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
   // Getters
   AuthStatus get status => _status;
@@ -47,6 +52,20 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       _setAuthError(e.toString());
       _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<bool> isGoogleUser() async {
+    try {
+      final currentUser = await _authRepository.currentUser;
+      if (currentUser != null) {
+        // Implementasi untuk cek apakah user berasal dari Google
+        return await _authRepository.isUserFromGoogle();
+      }
+      return false;
+    } catch (e) {
+      _setAuthError(e.toString());
       return false;
     }
   }
@@ -85,6 +104,50 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  // Reauthenticate with Google
+  Future<bool> reauthenticateWithGoogle() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser =
+          await googleSignIn.signIn(); // <-- HARUS .signIn(), bukan silent
+      if (googleUser == null) {
+        // User canceled the sign-in
+        return false;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken,
+      );
+
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        _setAuthError('User not found. Please sign in again.');
+        return false;
+      }
+
+      await user.reauthenticateWithCredential(credential);
+      return true;
+    } catch (e) {
+      _setAuthError(e.toString());
+      return false;
+    }
+  }
+
+  // Reauthenticate with email and password
+  Future<bool> reauthenticateWithEmailPassword(String password) async {
+    try {
+      await _authRepository.reauthenticateWithEmailPassword(password);
+      return true;
+    } catch (e) {
+      _setAuthError(e.toString());
+      return false;
+    }
+  }
+
   // Sign out
   Future<void> signOut() async {
     await _authRepository.signOut();
@@ -112,7 +175,47 @@ class AuthProvider with ChangeNotifier {
       _setLoading(true);
       _status = AuthStatus.authenticating;
       notifyListeners();
+
       await _authRepository.deleteAccount();
+      await _authRepository.signOut(); // Sign out after deletion
+
+      _user = null; // Set user to null after deletion
+      _status = AuthStatus.unauthenticated;
+      _setLoading(false);
+      notifyListeners();
+
+      return true;
+    } catch (e) {
+      _setAuthError(e.toString());
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  // Change password
+  Future<bool> changePassword(String oldPassword, String newPassword) async {
+    try {
+      clearError();
+      _setLoading(true);
+      _status = AuthStatus.authenticating;
+      notifyListeners();
+
+      // Cek apakah user menggunakan Google
+      bool isGoogle = await isGoogleUser();
+
+      if (isGoogle) {
+        // Jika pengguna Google, kita perlu melakukan re-authentication
+        await _authRepository.reauthenticateWithGoogle();
+        await _authRepository.changePassword(
+            '', newPassword); // Password lama diabaikan untuk pengguna Google
+      } else {
+        // Jika bukan pengguna Google, kita butuh password lama untuk mengganti password
+        if (oldPassword.isEmpty) {
+          throw Exception('Current password is required');
+        }
+        await _authRepository.changePassword(oldPassword, newPassword);
+      }
+
       _setLoading(false);
       return true;
     } catch (e) {

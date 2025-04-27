@@ -3,16 +3,15 @@ import 'package:flutter_inset_box_shadow/flutter_inset_box_shadow.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:neurodyx/core/constants/assets_path.dart';
 import 'package:neurodyx/core/widgets/custom_snack_bar.dart';
+import 'package:neurodyx/features/main/presentation/pages/main_navigator.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/connectivity_service.dart';
-import '../../../home/presentation/pages/home_page.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/auth_input_field.dart';
+import '../../../../core/widgets/custom_text_field.dart';
 import 'login_page.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 
 class RegisterPage extends StatefulWidget {
@@ -164,10 +163,10 @@ class _RegisterPageState extends State<RegisterPage> {
       // Delay navigation slightly to allow the snackbar to be visible
       await Future.delayed(const Duration(seconds: 1));
 
-      // Navigate to HomePage and remove all previous routes
+      // Navigate to HomePage
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute(builder: (context) => const MainNavigator()),
           (route) => false,
         );
       }
@@ -212,15 +211,13 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 8),
 
                   // Title
-                  Center(
+                  const Center(
                     child: Text(
                       'Sign Up',
-                      style: GoogleFonts.lexendExa(
-                        textStyle: const TextStyle(
-                          color: AppColors.grey,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      style: TextStyle(
+                        color: AppColors.grey,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -228,7 +225,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 40),
 
                   // Username input
-                  AuthInputField(
+                  CustomTextField(
                     label: 'Username',
                     hintText: 'Enter your username',
                     controller: _usernameController,
@@ -255,7 +252,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 24),
 
                   // Email input
-                  AuthInputField(
+                  CustomTextField(
                     label: 'Email',
                     hintText: 'Enter your email',
                     controller: _emailController,
@@ -274,7 +271,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 24),
 
                   // Password input
-                  AuthInputField(
+                  CustomTextField(
                     label: 'Password',
                     hintText: 'Enter password',
                     controller: _passwordController,
@@ -295,7 +292,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 24),
 
                   // Confirm Password input
-                  AuthInputField(
+                  CustomTextField(
                     label: 'Confirm Password',
                     hintText: 'Confirm password',
                     controller: _confirmPasswordController,
@@ -366,7 +363,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   Center(
                     child: TextButton(
                       onPressed: () {
-                        // Clear error before navigating
                         Provider.of<AuthProvider>(context, listen: false)
                             .clearError();
                         Navigator.push(
@@ -379,21 +375,31 @@ class _RegisterPageState extends State<RegisterPage> {
                       child: RichText(
                         text: TextSpan(
                           text: "Already have an account? ",
-                          style: GoogleFonts.lexendExa(
-                            textStyle: const TextStyle(
-                              color: AppColors.grey,
-                              fontSize: 14,
-                            ),
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: AppColors.grey,
+                                        fontSize: 14,
+                                      ) ??
+                                  const TextStyle(
+                                    color: AppColors.grey,
+                                    fontSize: 14,
+                                  ),
                           children: [
                             TextSpan(
                               text: 'Login',
-                              style: GoogleFonts.lexendExa(
-                                textStyle: const TextStyle(
-                                  color: AppColors.blue,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: AppColors.blue,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ) ??
+                                  const TextStyle(
+                                    color: AppColors.blue,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                             ),
                           ],
                         ),
@@ -412,16 +418,14 @@ class _RegisterPageState extends State<RegisterPage> {
                           thickness: 1,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'OR',
-                          style: GoogleFonts.lexendExa(
-                            textStyle: const TextStyle(
-                              color: AppColors.grey,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          style: TextStyle(
+                            color: AppColors.grey,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
@@ -465,14 +469,12 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 24,
                           ),
                           const SizedBox(width: 12),
-                          Text(
+                          const Text(
                             'Register with Google',
-                            style: GoogleFonts.lexendExa(
-                              textStyle: const TextStyle(
-                                color: AppColors.grey,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            style: TextStyle(
+                              color: AppColors.grey,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],

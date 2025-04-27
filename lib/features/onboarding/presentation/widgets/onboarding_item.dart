@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:neurodyx/core/constants/assets_path.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/widgets/custom_button.dart';
@@ -83,7 +84,7 @@ class OnboardingItem extends StatelessWidget {
                               ),
                               const SizedBox(width: 4),
                               SvgPicture.asset(
-                                'assets/icons/ic_arrow_right.svg',
+                                AssetPath.iconArrowRight,
                                 height: 16,
                                 width: 16,
                               ),

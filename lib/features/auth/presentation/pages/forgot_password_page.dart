@@ -6,8 +6,7 @@ import 'package:neurodyx/core/widgets/custom_snack_bar.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/auth_input_field.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/widgets/custom_text_field.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -95,13 +94,17 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   Center(
                     child: Text(
                       'Reset Password',
-                      style: GoogleFonts.lexendExa(
-                        textStyle: const TextStyle(
-                          color: AppColors.grey,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                    color: AppColors.grey,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w600,
+                                  ) ??
+                              const TextStyle(
+                                color: AppColors.grey,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w600,
+                              ),
                     ),
                   ),
 
@@ -109,20 +112,22 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                   // Description
                   Text(
-                    'Enter your email address and we will send you instructions to reset your password.',
-                    style: GoogleFonts.lexendExa(
-                      textStyle: const TextStyle(
-                        color: AppColors.grey,
-                        fontSize: 14,
-                      ),
-                    ),
+                    'Enter your email address and we will send you instructions to reset your password',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppColors.grey,
+                              fontSize: 14,
+                            ) ??
+                        const TextStyle(
+                          color: AppColors.grey,
+                          fontSize: 14,
+                        ),
                     textAlign: TextAlign.center,
                   ),
 
                   const SizedBox(height: 40),
 
                   // Email input
-                  AuthInputField(
+                  CustomTextField(
                     label: 'Email',
                     hintText: 'Enter your email',
                     controller: _emailController,

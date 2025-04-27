@@ -12,6 +12,12 @@ class AppColors {
   static const Color grey = Color(0xFF757575);
   static const Color textPrimary = Color(0xFF424242);
 
+  // Card colors
+  static const Color deepPurple100 = Color(0xFFD1C4E9);
+  static const Color pink50 = Color(0xFFFCE4EC);
+  static const Color blue50 = Color(0xFFE3F2FD);
+  static const Color yellow200 = Color(0xFFFFF59D);
+
   // Onboarding background colors
   static const Color background1 = Color(0xFFB2DFDB);
   static const Color background2 = Color(0xFFFFCDD2);

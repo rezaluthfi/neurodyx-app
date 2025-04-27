@@ -1,314 +1,129 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../auth/presentation/pages/login_page.dart';
+import '../../../../core/constants/assets_path.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../../../../core/widgets/custom_card.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('HomePage initialized');
+  }
+
+  @override
   Widget build(BuildContext context) {
+    debugPrint('HomePage building');
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
+    // Make sure we have a user before rendering content
+    if (user == null) {
+      debugPrint('HomePage: User is null!');
+    } else {
+      debugPrint('HomePage: User email is ${user.email}');
+    }
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        title: Text(
-          'Neurodyx',
-          style: GoogleFonts.lexendExa(
-            textStyle: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: Text(
-                    'Log Out',
-                    style: GoogleFonts.lexendExa(
-                      textStyle: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  content: Text(
-                    'Are you sure you want to log out?',
-                    style: GoogleFonts.lexendExa(),
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: Text(
-                        'Cancel',
-                        style: GoogleFonts.lexendExa(
-                          textStyle: const TextStyle(
-                            color: AppColors.grey,
-                          ),
-                        ),
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        await authProvider.signOut();
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          // Navigate to login page and remove all previous routes
-                          Navigator.of(context).pushAndRemoveUntil(
-                            MaterialPageRoute(
-                                builder: (context) => const LoginPage()),
-                            (route) => false,
-                          );
-                        }
-                      },
-                      child: Text(
-                        'Log Out',
-                        style: GoogleFonts.lexendExa(
-                          textStyle: const TextStyle(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.check_circle_outline,
-                color: Colors.green,
-                size: 80,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Welcome!',
-                style: GoogleFonts.lexendExa(
-                  textStyle: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'You are successfully logged in as:',
-                style: GoogleFonts.lexendExa(
-                  textStyle: const TextStyle(
-                    color: AppColors.grey,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Greeting Section
+                Text(
+                  'Hello, ${user?.email?.split('@')[0] ?? 'Guest'}!',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
                     fontSize: 16,
                   ),
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                // Prioritize username from Firestore
-                user?.username != null &&
-                        user!.username!.isNotEmpty &&
-                        !user.username!.contains('@')
-                    ? user
-                        .username! // Use username if available and not an email
-                    : user?.displayName ??
-                        user?.email ??
-                        'User', // Fallback to displayName or email
-                style: GoogleFonts.lexendExa(
-                  textStyle: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
+                const SizedBox(height: 8),
+                const Text(
+                  'What Are You Looking For?',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-              if (user != null && !user.isEmailVerified) ...[
+                const SizedBox(height: 16),
+                const Text(
+                  'Let me help you explore, screen, and find the right therapy for dyslexia!',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                  ),
+                ),
                 const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.amber.shade800,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Please verify your email address',
-                          style: GoogleFonts.lexendExa(
-                            textStyle: TextStyle(
-                              color: Colors.amber.shade800,
-                              fontSize: 14,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+
+                // Card 1: Get to Know Dyslexia
+                CustomCard(
+                  title: 'Get to Know Dyslexia',
+                  subtitle:
+                      'Learn about the early signs and how dyslexia affects learning',
+                  buttonText: 'EXPLORE',
+                  backgroundColor: AppColors.deepPurple100,
+                  iconPath: AssetPath.iconSearch3D,
+                  onTap: () {
+                    // Add navigation or logic for "Explore"
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Card 2: Smart Screening & Assessment
+                CustomCard(
+                  title: 'Smart Screening & Assessment',
+                  subtitle:
+                      'Start with a quick test, then dive deeper to understand your needs',
+                  buttonText: 'CHECK',
+                  backgroundColor: AppColors.pink50,
+                  iconPath: AssetPath.iconPaperboard3D,
+                  onTap: () {
+                    // Add navigation or logic for "Check"
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Card 3: Multisensory Therapy Plan
+                CustomCard(
+                  title: 'Multisensory Therapy Plan',
+                  subtitle:
+                      'Get the right therapy approach tailored just for you',
+                  buttonText: 'START',
+                  backgroundColor: AppColors.blue50,
+                  iconPath: AssetPath.iconSensory3D,
+                  onTap: () {
+                    // Add navigation or logic for "Start"
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Card 4: See Your Progress!
+                CustomCard(
+                  title: 'See Your Progress!',
+                  subtitle: 'Track your improvements and celebrate small wins',
+                  buttonText: 'TRACK',
+                  backgroundColor: AppColors.yellow200,
+                  iconPath: AssetPath.iconFire3D,
+                  onTap: () {
+                    // Add navigation or logic for "Track"
+                  },
                 ),
               ],
-              const SizedBox(height: 24),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text(
-                        'Delete Account',
-                        style: GoogleFonts.lexendExa(
-                          textStyle: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      content: Text(
-                        'Are you sure you want to delete your account? This action cannot be undone.',
-                        style: GoogleFonts.lexendExa(),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: Text(
-                            'Cancel',
-                            style: GoogleFonts.lexendExa(
-                              textStyle: const TextStyle(
-                                color: AppColors.grey,
-                              ),
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () async {
-                            final success = await authProvider.deleteAccount();
-                            if (context.mounted) {
-                              Navigator.pop(context);
-                              if (success) {
-                                // Navigate to login page and remove all previous routes
-                                Navigator.of(context).pushAndRemoveUntil(
-                                  MaterialPageRoute(
-                                      builder: (context) => const LoginPage()),
-                                  (route) => false,
-                                );
-                              } else {
-                                // Show error message
-                                if (authProvider.errorMessage.contains(
-                                    'This operation requires a recent login')) {
-                                  // Handle requires-recent-login error
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: Text(
-                                        'Re-login Required',
-                                        style: GoogleFonts.lexendExa(
-                                          textStyle: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                      content: Text(
-                                        'Please sign in again to delete your account.',
-                                        style: GoogleFonts.lexendExa(),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () async {
-                                            await authProvider.signOut();
-                                            if (context.mounted) {
-                                              Navigator.pop(context);
-                                              Navigator.of(context)
-                                                  .pushAndRemoveUntil(
-                                                MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        const LoginPage()),
-                                                (route) => false,
-                                              );
-                                            }
-                                          },
-                                          child: Text(
-                                            'Sign In',
-                                            style: GoogleFonts.lexendExa(
-                                              textStyle: const TextStyle(
-                                                color: AppColors.primary,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                } else {
-                                  // Show other error messages
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        authProvider.errorMessage,
-                                        style: GoogleFonts.lexendExa(),
-                                      ),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                              }
-                            }
-                          },
-                          child: Text(
-                            'Delete',
-                            style: GoogleFonts.lexendExa(
-                              textStyle: const TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                child: Text(
-                  'Delete Account',
-                  style: GoogleFonts.lexendExa(
-                    textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),

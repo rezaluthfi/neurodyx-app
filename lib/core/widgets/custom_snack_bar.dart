@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 enum SnackBarType {
   error,
@@ -23,12 +22,14 @@ class CustomSnackBar {
     final snackBar = SnackBar(
       content: Text(
         message,
-        style: GoogleFonts.lexendExa(
-          textStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-          ),
-        ),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.white,
+                  fontSize: 12,
+                ) ??
+            const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+            ),
       ),
       backgroundColor: backgroundColor,
       duration: duration,

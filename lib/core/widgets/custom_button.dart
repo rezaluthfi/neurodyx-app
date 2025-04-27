@@ -28,12 +28,19 @@ class CustomButton extends StatelessWidget {
       child: child ??
           Text(
             text ?? '',
-            style: AppTextStyles.button.copyWith(
-              color: isPrimary
-                  ? AppColors.textPrimary
-                  : AppColors.textPrimary.withOpacity(0.7),
-              fontWeight: FontWeight.normal,
-            ),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: isPrimary
+                          ? AppColors.textPrimary
+                          : AppColors.textPrimary.withOpacity(0.7),
+                      fontWeight: FontWeight.normal,
+                    ) ??
+                TextStyle(
+                  color: isPrimary
+                      ? AppColors.textPrimary
+                      : AppColors.textPrimary.withOpacity(0.7),
+                  fontWeight: FontWeight.normal,
+                  fontSize: 14, // Fallback font size
+                ),
           ),
     );
   }

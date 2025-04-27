@@ -3,6 +3,7 @@ import 'package:flutter_inset_box_shadow/flutter_inset_box_shadow.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:neurodyx/core/constants/assets_path.dart';
 import 'package:neurodyx/core/widgets/custom_snack_bar.dart';
+import 'package:neurodyx/features/main/presentation/pages/main_navigator.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -10,10 +11,9 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/services/connectivity_service.dart';
 import '../../../home/presentation/pages/home_page.dart';
 import '../providers/auth_provider.dart';
-import '../widgets/auth_input_field.dart';
+import '../../../../core/widgets/custom_text_field.dart';
 import 'forgot_password_page.dart';
 import 'register_page.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'dart:async';
 
 class LoginPage extends StatefulWidget {
@@ -116,10 +116,10 @@ class _LoginPageState extends State<LoginPage> {
         // Delay navigation slightly to allow the snackbar to be visible
         await Future.delayed(const Duration(seconds: 1));
 
-        // Navigate to HomePage and remove all previous routes
+        // Navigate to HomePage
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const HomePage()),
+            MaterialPageRoute(builder: (context) => const MainNavigator()),
             (route) => false,
           );
         }
@@ -156,10 +156,10 @@ class _LoginPageState extends State<LoginPage> {
       // Delay navigation slightly to allow the snackbar to be visible
       await Future.delayed(const Duration(seconds: 1));
 
-      // Navigate to HomePage and remove all previous routes
+      // Navigate to HomePage
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute(builder: (context) => const MainNavigator()),
           (route) => false,
         );
       }
@@ -204,15 +204,13 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 8),
 
                   // Title
-                  Center(
+                  const Center(
                     child: Text(
                       'Login',
-                      style: GoogleFonts.lexendExa(
-                        textStyle: const TextStyle(
-                          color: AppColors.grey,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -220,7 +218,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 40),
 
                   // Email input
-                  AuthInputField(
+                  CustomTextField(
                     label: 'Email',
                     hintText: 'Enter your email',
                     controller: _emailController,
@@ -239,7 +237,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 24),
 
                   // Password input
-                  AuthInputField(
+                  CustomTextField(
                     label: 'Password',
                     hintText: 'Enter password',
                     controller: _passwordController,
@@ -269,14 +267,12 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         );
                       },
-                      child: Text(
+                      child: const Text(
                         'Forgot Password?',
-                        style: GoogleFonts.lexendExa(
-                          textStyle: const TextStyle(
-                            color: AppColors.grey,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
+                        style: TextStyle(
+                          color: AppColors.grey,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -335,7 +331,6 @@ class _LoginPageState extends State<LoginPage> {
                   Center(
                     child: TextButton(
                       onPressed: () {
-                        // Clear error before navigating
                         Provider.of<AuthProvider>(context, listen: false)
                             .clearError();
                         Navigator.push(
@@ -348,21 +343,31 @@ class _LoginPageState extends State<LoginPage> {
                       child: RichText(
                         text: TextSpan(
                           text: "Don't have an account? ",
-                          style: GoogleFonts.lexendExa(
-                            textStyle: const TextStyle(
-                              color: AppColors.grey,
-                              fontSize: 14,
-                            ),
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                        color: AppColors.grey,
+                                        fontSize: 14,
+                                      ) ??
+                                  const TextStyle(
+                                    color: AppColors.grey,
+                                    fontSize: 14,
+                                  ),
                           children: [
                             TextSpan(
                               text: 'Sign Up',
-                              style: GoogleFonts.lexendExa(
-                                textStyle: const TextStyle(
-                                  color: AppColors.blue,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: AppColors.blue,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ) ??
+                                  const TextStyle(
+                                    color: AppColors.blue,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                  ),
                             ),
                           ],
                         ),
@@ -381,16 +386,14 @@ class _LoginPageState extends State<LoginPage> {
                           thickness: 1,
                         ),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'OR',
-                          style: GoogleFonts.lexendExa(
-                            textStyle: const TextStyle(
-                              color: AppColors.grey,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          style: TextStyle(
+                            color: AppColors.grey,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
@@ -434,14 +437,12 @@ class _LoginPageState extends State<LoginPage> {
                             width: 24,
                           ),
                           const SizedBox(width: 12),
-                          Text(
+                          const Text(
                             'Login with Google',
-                            style: GoogleFonts.lexendExa(
-                              textStyle: const TextStyle(
-                                color: AppColors.grey,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            style: TextStyle(
+                              color: AppColors.grey,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],

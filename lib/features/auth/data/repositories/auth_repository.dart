@@ -36,6 +36,26 @@ class AuthRepository {
     }
   }
 
+  Future<void> reauthenticateWithGoogle() async {
+    try {
+      await _authService.reauthenticateWithGoogle();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> reauthenticateWithEmailPassword(String password) async {
+    await _authService.reauthenticateWithEmailPassword(password);
+  }
+
+  Future<bool> isUserFromGoogle() async {
+    try {
+      return await _authService.isUserFromGoogle();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> signOut() async {
     await _authService.signOut();
   }
@@ -51,6 +71,14 @@ class AuthRepository {
   Future<void> deleteAccount() async {
     try {
       await _authService.deleteAccount();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> changePassword(String oldPassword, String newPassword) async {
+    try {
+      await _authService.changePassword(oldPassword, newPassword);
     } catch (e) {
       rethrow;
     }

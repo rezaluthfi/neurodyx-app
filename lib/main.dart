@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:neurodyx/core/providers/font_providers.dart';
 import 'package:provider/provider.dart';
 import 'core/wrappers/auth_wrapper.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
@@ -13,25 +15,45 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  runApp(const MyApp());
+  // Inisialisasi FontProvider
+  final fontProvider = FontProvider();
+  await fontProvider.initialize();
+
+  runApp(MyApp(fontProvider: fontProvider));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final FontProvider fontProvider;
+
+  const MyApp({super.key, required this.fontProvider});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider.value(value: fontProvider),
       ],
-      child: MaterialApp(
-        title: 'Neurodyx',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          fontFamily: 'LexendExa',
-        ),
-        home: const AuthWrapper(),
+      child: Consumer<FontProvider>(
+        builder: (context, fontProvider, child) {
+          return MaterialApp(
+            title: 'Neurodyx',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              fontFamily: fontProvider.selectedFont == 'Lexend'
+                  ? null
+                  : 'OpenDyslexicMono',
+              textTheme: fontProvider.selectedFont == 'Lexend'
+                  ? GoogleFonts.lexendExaTextTheme(
+                      Theme.of(context).textTheme,
+                    )
+                  : Theme.of(context).textTheme.apply(
+                        fontFamily: 'OpenDyslexicMono',
+                      ),
+            ),
+            home: const AuthWrapper(),
+          );
+        },
       ),
     );
   }
