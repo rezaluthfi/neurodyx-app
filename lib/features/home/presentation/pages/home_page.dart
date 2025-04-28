@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:neurodyx/features/get_to_know/presentation/pages/get_to_know_page.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/assets_path.dart';
@@ -78,7 +79,12 @@ class _HomePageState extends State<HomePage> {
                   backgroundColor: AppColors.deepPurple100,
                   iconPath: AssetPath.iconSearch3D,
                   onTap: () {
-                    // Add navigation or logic for "Explore"
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const GetToKnowPage(),
+                      ),
+                    );
                   },
                 ),
                 const SizedBox(height: 16),

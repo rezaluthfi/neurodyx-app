@@ -23,6 +23,7 @@ class ProfilePage extends StatelessWidget {
     }
 
     return Scaffold(
+      backgroundColor: AppColors.offWhite,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),

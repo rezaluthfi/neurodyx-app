@@ -25,4 +25,18 @@ class AssetPath {
       'assets/images/onboarding/img_onboarding_2.png';
   static const String onboarding3 =
       'assets/images/onboarding/img_onboarding_3.png';
+
+  // Get to know images
+  static const String getToKnow1 =
+      'assets/images/get_to_know/img_get_to_know_1.png';
+  static const String getToKnow2 =
+      'assets/images/get_to_know/img_get_to_know_2.png';
+  static const String getToKnow3 =
+      'assets/images/get_to_know/img_get_to_know_3.png';
+  static const String einsteinPhoto =
+      'assets/images/get_to_know/img_get_to_know_einstein.png';
+  static const String stevePhoto =
+      'assets/images/get_to_know/img_get_to_know_steve.png';
+  static const String leonardoPhoto =
+      'assets/images/get_to_know/img_get_to_know_leonardo.png';
 }

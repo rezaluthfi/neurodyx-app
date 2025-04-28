@@ -14,6 +14,7 @@ class SettingsPage extends StatelessWidget {
     final fontProvider = Provider.of<FontProvider>(context);
 
     return Scaffold(
+      backgroundColor: AppColors.offWhite,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
