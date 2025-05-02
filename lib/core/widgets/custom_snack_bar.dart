@@ -33,6 +33,7 @@ class CustomSnackBar {
       ),
       backgroundColor: backgroundColor,
       duration: duration,
+      behavior: SnackBarBehavior.floating, // Ensures SnackBar floats above FAB
       action: SnackBarAction(
         label: actionLabel,
         textColor: Colors.white,

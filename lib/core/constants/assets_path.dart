@@ -9,8 +9,9 @@ class AssetPath {
 
   // Icons png
   static const String iconHome = 'assets/icons/png/ic_home.png';
-  static const String iconProfile = 'assets/icons/png/ic_profile.png';
-  static const String iconSettings = 'assets/icons/png/ic_settings.png';
+  static const String iconCamera = 'assets/icons/png/ic_camera.png';
+  static const String iconProfileSettings =
+      'assets/icons/png/ic_profile_settings.png';
 
   static const String iconSearch3D = 'assets/icons/png/ic_search_3d.png';
   static const String iconPaperboard3D =

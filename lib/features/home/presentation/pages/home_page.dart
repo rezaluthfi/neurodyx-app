@@ -87,6 +87,7 @@ class _HomePageState extends State<HomePage> {
                     );
                   },
                 ),
+
                 const SizedBox(height: 16),
 
                 // Card 2: Smart Screening & Assessment
@@ -130,6 +131,9 @@ class _HomePageState extends State<HomePage> {
                     // Add navigation or logic for "Track"
                   },
                 ),
+
+                // Spacer to prevent FloatingActionButton from overlapping
+                const SizedBox(height: 24),
               ],
             ),
           ),

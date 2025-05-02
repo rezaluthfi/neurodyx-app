@@ -40,10 +40,10 @@ class MyApp extends StatelessWidget {
             title: 'Neurodyx',
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
-              fontFamily: fontProvider.selectedFont == 'Lexend'
+              fontFamily: fontProvider.selectedFont == 'Lexend Exa'
                   ? null
                   : 'OpenDyslexicMono',
-              textTheme: fontProvider.selectedFont == 'Lexend'
+              textTheme: fontProvider.selectedFont == 'Lexend Exa'
                   ? GoogleFonts.lexendExaTextTheme(
                       Theme.of(context).textTheme,
                     )

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class FontProvider extends ChangeNotifier {
-  String _selectedFont = 'Lexend'; // Default font
+  String _selectedFont = 'Lexend Exa'; // Default font
   bool _isInitialized = false;
 
   String get selectedFont => _selectedFont;
 
   FontProvider() {
-    // Jangan panggil _loadFont di constructor
+    // Constructor to initialize the provider
   }
 
   Future<void> initialize() async {
