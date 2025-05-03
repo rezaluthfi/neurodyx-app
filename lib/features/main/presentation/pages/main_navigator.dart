@@ -15,8 +15,8 @@ class MainNavigator extends StatefulWidget {
 class _MainNavigatorState extends State<MainNavigator>
     with WidgetsBindingObserver {
   int _selectedIndex = 0;
-
   late final List<Widget> _pages;
+  final ValueNotifier<bool> _hideNavBar = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -24,7 +24,7 @@ class _MainNavigatorState extends State<MainNavigator>
     WidgetsBinding.instance.addObserver(this);
     _pages = [
       const HomePage(),
-      const ScanPage(),
+      ScanPage(hideNavBarNotifier: _hideNavBar),
       const ProfilePage(),
     ];
     debugPrint("MainNavigator initialized with $_pages");
@@ -33,6 +33,7 @@ class _MainNavigatorState extends State<MainNavigator>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _hideNavBar.dispose();
     super.dispose();
   }
 
@@ -63,50 +64,66 @@ class _MainNavigatorState extends State<MainNavigator>
         index: _selectedIndex,
         children: _pages,
       ),
-      bottomNavigationBar: Theme(
-        data: bottomNavTheme,
-        child: BottomAppBar(
-          notchMargin: 8,
-          shape: const CircularNotchedRectangle(),
-          color: AppColors.white,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildNavItem(
-                    icon: Icons.home,
-                    assetPath: AssetPath.iconHome,
-                    label: 'Home',
-                    index: 0,
+      bottomNavigationBar: ValueListenableBuilder<bool>(
+        valueListenable: _hideNavBar,
+        builder: (context, hideNavBar, child) {
+          if (hideNavBar && _selectedIndex == 1) {
+            return const SizedBox.shrink();
+          }
+          return Theme(
+            data: bottomNavTheme,
+            child: BottomAppBar(
+              notchMargin: 8,
+              shape: const CircularNotchedRectangle(),
+              color: AppColors.white,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildNavItem(
+                        icon: Icons.home,
+                        assetPath: AssetPath.iconHome,
+                        label: 'Home',
+                        index: 0,
+                      ),
+                      _buildNavItem(
+                        icon: Icons.person,
+                        assetPath: AssetPath.iconProfileSettings,
+                        label: 'Profile',
+                        index: 2,
+                      ),
+                    ],
                   ),
-                  _buildNavItem(
-                    icon: Icons.person,
-                    assetPath: AssetPath.iconProfileSettings,
-                    label: 'Profile',
-                    index: 2,
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
-      floatingActionButton: SizedBox(
-        width: 72,
-        height: 72,
-        child: FloatingActionButton(
-          onPressed: () => _onItemTapped(1),
-          backgroundColor: AppColors.white,
-          foregroundColor: AppColors.white,
-          shape: const CircleBorder(),
-          child: Image.asset(
-            AssetPath.iconCamera,
-            width: 32,
-            height: 32,
-          ),
-        ),
+      floatingActionButton: ValueListenableBuilder<bool>(
+        valueListenable: _hideNavBar,
+        builder: (context, hideNavBar, child) {
+          if (hideNavBar && _selectedIndex == 1) {
+            return const SizedBox.shrink();
+          }
+          return SizedBox(
+            width: 64,
+            height: 64,
+            child: FloatingActionButton(
+              onPressed: () => _onItemTapped(1),
+              backgroundColor: AppColors.white,
+              foregroundColor: AppColors.white,
+              shape: const CircleBorder(),
+              child: Image.asset(
+                AssetPath.iconCamera,
+                width: 28,
+                height: 28,
+              ),
+            ),
+          );
+        },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       extendBody: true,
