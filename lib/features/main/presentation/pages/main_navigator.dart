@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:neurodyx/core/constants/assets_path.dart';
-import '../../../../core/constants/app_colors.dart';
-import '../../../home/presentation/pages/home_page.dart';
-import '../../../profile/presentation/pages/profile_page.dart';
-import '../../../scan/presentation/page/scan_page.dart';
+import 'package:neurodyx/core/constants/app_colors.dart';
+import 'package:neurodyx/features/home/presentation/pages/home_page.dart';
+import 'package:neurodyx/features/profile/presentation/pages/profile_page.dart';
+import 'package:neurodyx/features/scan/presentation/pages/scan_page.dart';
+import 'package:neurodyx/features/scan/presentation/providers/scan_provider.dart';
+import 'package:provider/provider.dart';
 
 class MainNavigator extends StatefulWidget {
   const MainNavigator({super.key});
@@ -16,15 +18,16 @@ class _MainNavigatorState extends State<MainNavigator>
     with WidgetsBindingObserver {
   int _selectedIndex = 0;
   late final List<Widget> _pages;
-  final ValueNotifier<bool> _hideNavBar = ValueNotifier<bool>(false);
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Use ScanProvider's hideNavBarNotifier for ScanPage
+    final scanProvider = Provider.of<ScanProvider>(context, listen: false);
     _pages = [
       const HomePage(),
-      ScanPage(hideNavBarNotifier: _hideNavBar),
+      ScanPage(hideNavBarNotifier: scanProvider.hideNavBarNotifier),
       const ProfilePage(),
     ];
     debugPrint("MainNavigator initialized with $_pages");
@@ -33,7 +36,6 @@ class _MainNavigatorState extends State<MainNavigator>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _hideNavBar.dispose();
     super.dispose();
   }
 
@@ -58,75 +60,80 @@ class _MainNavigatorState extends State<MainNavigator>
       highlightColor: Colors.transparent,
     );
 
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
-      bottomNavigationBar: ValueListenableBuilder<bool>(
-        valueListenable: _hideNavBar,
-        builder: (context, hideNavBar, child) {
-          if (hideNavBar && _selectedIndex == 1) {
-            return const SizedBox.shrink();
-          }
-          return Theme(
-            data: bottomNavTheme,
-            child: BottomAppBar(
-              notchMargin: 8,
-              shape: const CircularNotchedRectangle(),
-              color: AppColors.white,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _buildNavItem(
-                        icon: Icons.home,
-                        assetPath: AssetPath.iconHome,
-                        label: 'Home',
-                        index: 0,
+    return Consumer<ScanProvider>(
+      builder: (context, scanProvider, child) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: IndexedStack(
+            index: _selectedIndex,
+            children: _pages,
+          ),
+          bottomNavigationBar: ValueListenableBuilder<bool>(
+            valueListenable: scanProvider.hideNavBarNotifier,
+            builder: (context, hideNavBar, child) {
+              if (hideNavBar && _selectedIndex == 1) {
+                return const SizedBox.shrink();
+              }
+              return Theme(
+                data: bottomNavTheme,
+                child: BottomAppBar(
+                  notchMargin: 8,
+                  shape: const CircularNotchedRectangle(),
+                  color: AppColors.white,
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _buildNavItem(
+                            icon: Icons.home,
+                            assetPath: AssetPath.iconHome,
+                            label: 'Home',
+                            index: 0,
+                          ),
+                          _buildNavItem(
+                            icon: Icons.person,
+                            assetPath: AssetPath.iconProfileSettings,
+                            label: 'Profile',
+                            index: 2,
+                          ),
+                        ],
                       ),
-                      _buildNavItem(
-                        icon: Icons.person,
-                        assetPath: AssetPath.iconProfileSettings,
-                        label: 'Profile',
-                        index: 2,
-                      ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: ValueListenableBuilder<bool>(
-        valueListenable: _hideNavBar,
-        builder: (context, hideNavBar, child) {
-          if (hideNavBar && _selectedIndex == 1) {
-            return const SizedBox.shrink();
-          }
-          return SizedBox(
-            width: 64,
-            height: 64,
-            child: FloatingActionButton(
-              onPressed: () => _onItemTapped(1),
-              backgroundColor: AppColors.white,
-              foregroundColor: AppColors.white,
-              shape: const CircleBorder(),
-              child: Image.asset(
-                AssetPath.iconCamera,
-                width: 28,
-                height: 28,
-              ),
-            ),
-          );
-        },
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      extendBody: true,
+              );
+            },
+          ),
+          floatingActionButton: ValueListenableBuilder<bool>(
+            valueListenable: scanProvider.hideNavBarNotifier,
+            builder: (context, hideNavBar, child) {
+              if (hideNavBar && _selectedIndex == 1) {
+                return const SizedBox.shrink();
+              }
+              return SizedBox(
+                width: 64,
+                height: 64,
+                child: FloatingActionButton(
+                  onPressed: () => _onItemTapped(1),
+                  backgroundColor: AppColors.white,
+                  foregroundColor: AppColors.white,
+                  shape: const CircleBorder(),
+                  child: Image.asset(
+                    AssetPath.iconCamera,
+                    width: 28,
+                    height: 28,
+                  ),
+                ),
+              );
+            },
+          ),
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
+          extendBody: true,
+        );
+      },
     );
   }
 

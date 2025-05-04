@@ -32,6 +32,7 @@ dependencies:
   connectivity_plus: ^6.1.4
   cupertino_icons: ^1.0.8
   email_validator: ^3.0.0
+  equatable: ^2.0.7
   firebase_auth: ^5.5.2
   firebase_core: ^3.13.0
   flutter:
@@ -45,8 +46,11 @@ dependencies:
   google_fonts: ^6.2.1
   google_mlkit_text_recognition: ^0.15.0
   google_sign_in: ^6.2.2
+  image: ^4.5.4
   image_picker: ^1.1.2
+  path_provider: ^2.1.5
   provider: ^6.1.4
+  share_plus: ^11.0.0
   shared_preferences: ^2.5.3
   smooth_page_indicator: ^1.2.1
 

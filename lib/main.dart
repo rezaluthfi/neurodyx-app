@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:neurodyx/core/providers/font_providers.dart';
+import 'package:neurodyx/core/wrappers/auth_wrapper.dart';
+import 'package:neurodyx/features/auth/presentation/providers/auth_provider.dart';
+import 'package:neurodyx/features/scan/data/repositories/scan_repository.dart';
+import 'package:neurodyx/features/scan/data/services/text_recognition_service.dart';
+import 'package:neurodyx/features/scan/presentation/providers/scan_provider.dart';
 import 'package:provider/provider.dart';
-import 'core/wrappers/auth_wrapper.dart';
-import 'features/auth/presentation/providers/auth_provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -15,7 +18,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Inisialisasi FontProvider
+  // Initialize FontProvider
   final fontProvider = FontProvider();
   await fontProvider.initialize();
 
@@ -33,6 +36,15 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider.value(value: fontProvider),
+        ChangeNotifierProvider(
+          create: (context) => ScanProvider(
+            scanRepository: ScanRepository(
+              textRecognitionService: TextRecognitionService(),
+            ),
+            hideNavBarNotifier: ValueNotifier<bool>(false),
+            fontProvider: Provider.of<FontProvider>(context, listen: false),
+          ),
+        ),
       ],
       child: Consumer<FontProvider>(
         builder: (context, fontProvider, child) {
