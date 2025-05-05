@@ -1,30 +1,104 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:neurodyx/core/constants/app_colors.dart';
 import 'package:neurodyx/features/scan/presentation/providers/scan_provider.dart';
 import 'package:neurodyx/features/scan/presentation/widgets/dyslexia_info_dialog.dart';
 import 'package:neurodyx/features/scan/presentation/widgets/text_customization_settings.dart';
+import 'package:neurodyx/features/scan/presentation/widgets/font_utils.dart';
 import 'package:provider/provider.dart';
 
-class ScanPage extends StatelessWidget {
+class ScanPage extends StatefulWidget {
   final ValueNotifier<bool> hideNavBarNotifier;
+  final VoidCallback? onClearMedia;
 
-  const ScanPage({super.key, required this.hideNavBarNotifier});
+  const ScanPage({
+    super.key,
+    required this.hideNavBarNotifier,
+    this.onClearMedia,
+  });
+
+  @override
+  State<ScanPage> createState() => _ScanPageState();
+}
+
+class _ScanPageState extends State<ScanPage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('ScanPage initState');
+    _scrollController.addListener(() {
+      debugPrint('Scroll position: ${_scrollController.position.pixels}');
+    });
+  }
+
+  @override
+  void dispose() {
+    debugPrint('ScanPage dispose');
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('ScanPage build');
     return Consumer<ScanProvider>(
       builder: (context, provider, _) {
+        debugPrint('Consumer rebuild, isProcessing: ${provider.isProcessing}');
         return Scaffold(
           backgroundColor: AppColors.offWhite,
+          appBar: provider.selectedMedia != null
+              ? AppBar(
+                  backgroundColor: AppColors.offWhite,
+                  elevation: 0,
+                  title: const Text(
+                    'Scan Result',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.close, color: AppColors.primary),
+                      onPressed: () {
+                        provider.clearMedia();
+                        widget.onClearMedia?.call();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                )
+              : AppBar(
+                  backgroundColor: AppColors.offWhite,
+                  elevation: 0,
+                  title: const Text(
+                    'Scan Text',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
           body: SafeArea(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  const SizedBox(height: 24),
-                  if (provider.selectedMedia == null) _buildInitialUI(context),
-                  if (provider.selectedMedia != null) _buildResultsUI(context),
-                ],
+            child: GlowingOverscrollIndicator(
+              showLeading: false,
+              showTrailing: false,
+              axisDirection: AxisDirection.down,
+              color: Colors.transparent,
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                physics: const ClampingScrollPhysics(),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 24),
+                    if (provider.selectedMedia == null)
+                      _buildInitialUI(context),
+                    if (provider.selectedMedia != null)
+                      _buildResultsUI(context),
+                  ],
+                ),
               ),
             ),
           ),
@@ -66,13 +140,13 @@ class ScanPage extends StatelessWidget {
   }
 
   Widget _buildInitialUI(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.camera_alt, size: 72, color: AppColors.primary),
-          const SizedBox(height: 16),
-          const Text(
+          Icon(Icons.camera_alt, size: 72, color: AppColors.primary),
+          SizedBox(height: 16),
+          Text(
             'Scan Text',
             style: TextStyle(
               fontSize: 24,
@@ -80,34 +154,16 @@ class ScanPage extends StatelessWidget {
               color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 24),
-          const Padding(
+          SizedBox(height: 24),
+          Padding(
             padding: EdgeInsets.symmetric(horizontal: 32),
             child: Text(
-              'Tap to scan text from images or documents',
+              'Use the scan button below to capture text from images or documents.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: AppColors.grey),
             ),
           ),
-          const SizedBox(height: 48),
-          ElevatedButton(
-            onPressed: () => _pickImage(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(50),
-              ),
-            ),
-            child: const Text(
-              'Start Scanning',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-          ),
+          SizedBox(height: 48),
         ],
       ),
     );
@@ -115,72 +171,194 @@ class ScanPage extends StatelessWidget {
 
   Widget _buildResultsUI(BuildContext context) {
     final provider = Provider.of<ScanProvider>(context);
+    debugPrint(
+        'Building _buildResultsUI, isProcessing: ${provider.isProcessing}');
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          debugPrint(
+              'LayoutBuilder constraints: ${constraints.maxWidth}x${constraints.maxHeight}');
+          if (provider.isProcessing) {
+            return _buildProcessingIndicator();
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: _buildImagePreview(context, constraints),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Results',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              if (provider.scanEntity.extractedText != null &&
+                  provider.scanEntity.extractedText!.isNotEmpty)
+                Container(
+                  width: constraints.maxWidth,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: provider.scanEntity.backgroundColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.grey.withOpacity(0.2)),
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: constraints.maxHeight * 0.5,
+                    ),
+                    child: SingleChildScrollView(
+                      child: Text(
+                        provider.scanEntity.extractedText!,
+                        style: getTextStyle(provider.scanEntity),
+                      ),
+                    ),
+                  ),
+                ),
+              if (provider.selectedMedia != null &&
+                  (provider.scanEntity.extractedText == null ||
+                      provider.scanEntity.extractedText!.isEmpty))
+                Container(
+                  width: constraints.maxWidth,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.grey.withOpacity(0.2)),
+                  ),
+                  child: const Text(
+                    'No text detected in the image. Try another image.',
+                    style: TextStyle(fontSize: 16, color: AppColors.grey),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _buildActionButton(
+                    icon: provider.isTtsPlaying ? Icons.stop : Icons.play_arrow,
+                    label: 'Audio',
+                    onPressed: () => provider.readTextAloud(context),
+                  ),
+                  _buildActionButton(
+                    icon: Icons.download,
+                    label: 'Save',
+                    onPressed: () => provider.saveText(context),
+                  ),
+                  _buildActionButton(
+                    icon: Icons.text_fields,
+                    label: 'Customize',
+                    onPressed: () => showTextCustomizationSettings(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'TTS Speed',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Slider(
+                            value: provider.speechRate,
+                            min: 0.1,
+                            max: 1.0,
+                            divisions: 9,
+                            label: provider.speechRate.toStringAsFixed(1),
+                            activeColor: AppColors.primary,
+                            inactiveColor: AppColors.grey.withOpacity(0.3),
+                            onChanged: (value) {
+                              provider.setSpeechRate(value, context: context);
+                            },
+                          ),
+                        ),
+                        if (provider.isSettingSpeechRate)
+                          const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                      ],
+                    ),
+                    Text(
+                      'Speed: ${provider.speechRate.toStringAsFixed(1)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProcessingIndicator() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.grey.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Scan Results',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.close, color: AppColors.grey),
-                onPressed: provider.clearScan,
-              ),
-            ],
+          CircularProgressIndicator(
+            color: AppColors.primary,
+            strokeWidth: 3,
           ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: _buildImagePreview(context),
+          SizedBox(height: 24),
+          Text(
+            'Processing text recognition...',
+            style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary),
           ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Extracted Text',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              _buildQuickCustomizeButtons(context),
-            ],
+          SizedBox(height: 8),
+          Text(
+            'Please wait while we analyze your image',
+            style: TextStyle(fontSize: 14, color: AppColors.grey),
+            textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
-          _buildTextResultView(context),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildActionButton(
-                icon: Icons.copy,
-                label: 'Copy',
-                onPressed: () => provider.copyText(context),
-              ),
-              _buildActionButton(
-                icon: Icons.share,
-                label: 'Share',
-                onPressed: () => provider.shareText(context),
-              ),
-              _buildActionButton(
-                icon: Icons.text_fields,
-                label: 'Customize',
-                onPressed: () => showTextCustomizationSettings(context),
-              ),
-            ],
+          SizedBox(height: 16),
+          LinearProgressIndicator(
+            backgroundColor: Colors.grey,
+            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
-          const SizedBox(height: 40),
         ],
       ),
     );
@@ -193,7 +371,9 @@ class ScanPage extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onPressed,
+      borderRadius: BorderRadius.circular(12),
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(12),
@@ -203,11 +383,12 @@ class ScanPage extends StatelessWidget {
             ),
             child: Icon(icon, color: AppColors.primary, size: 24),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             label,
             style: const TextStyle(
               color: AppColors.textPrimary,
+              fontSize: 12,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -216,54 +397,94 @@ class ScanPage extends StatelessWidget {
     );
   }
 
-  Widget _buildImagePreview(BuildContext context) {
-    final provider = Provider.of<ScanProvider>(context);
-    if (provider.selectedMedia != null) {
-      return SizedBox(
-        width: double.infinity,
-        height: 250,
-        child: Stack(
-          children: [
-            InteractiveViewer(
-              panEnabled: true,
-              minScale: 0.5,
-              maxScale: 4.0,
-              child: Image.file(
-                provider.selectedMedia!,
-                fit: BoxFit.cover,
-                width: double.infinity,
+  Widget _buildImagePreview(BuildContext context, BoxConstraints constraints) {
+    final provider = Provider.of<ScanProvider>(context, listen: false);
+    debugPrint(
+        'Building image preview, selectedMedia: ${provider.selectedMedia}');
+    return ValueListenableBuilder<File?>(
+      valueListenable: ValueNotifier<File?>(provider.selectedMedia),
+      builder: (context, selectedMedia, _) {
+        if (selectedMedia != null) {
+          final imageWidget = Image.file(
+            selectedMedia,
+            key: ValueKey(selectedMedia.path), // Ensure widget persistence
+            fit: BoxFit.cover,
+            width: constraints.maxWidth,
+            height: 250,
+            errorBuilder: (context, error, stackTrace) {
+              debugPrint('Image error: $error');
+              return Container(
+                width: constraints.maxWidth,
                 height: 250,
-              ),
-            ),
-            Positioned(
-              bottom: 8,
-              right: 8,
-              child: IconButton(
-                icon: const Icon(
-                  Icons.fullscreen,
-                  color: Colors.white,
-                  size: 30,
-                  shadows: [
-                    Shadow(
-                      blurRadius: 4.0,
-                      color: Colors.black54,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
+                color: AppColors.grey.withOpacity(0.2),
+                child: const Center(
+                  child: Text(
+                    'Error loading image',
+                    style: TextStyle(color: AppColors.grey),
+                  ),
                 ),
-                onPressed: () => _showFullScreenImage(context),
-                tooltip: 'View Fullscreen',
-              ),
+              );
+            },
+          );
+
+          return SizedBox(
+            width: constraints.maxWidth,
+            height: 250,
+            child: Stack(
+              children: [
+                InteractiveViewer(
+                  panEnabled: true,
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: imageWidget,
+                ),
+                if (provider.isProcessing)
+                  Container(
+                    width: constraints.maxWidth,
+                    height: 250,
+                    color: Colors.black.withOpacity(0.3),
+                    child: const Center(
+                      child: SizedBox(
+                        width: 40,
+                        height: 40,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 3,
+                        ),
+                      ),
+                    ),
+                  ),
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: IconButton(
+                    icon: const Icon(
+                      Icons.fullscreen,
+                      color: Colors.white,
+                      size: 30,
+                      shadows: [
+                        Shadow(
+                          blurRadius: 4.0,
+                          color: Colors.black54,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    onPressed: () => _showFullScreenImage(context),
+                    tooltip: 'View Fullscreen',
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
-    }
-    return Container(
-      width: double.infinity,
-      height: 200,
-      color: AppColors.grey.withOpacity(0.2),
-      child: const Center(child: Text('No image selected.')),
+          );
+        }
+        return Container(
+          width: constraints.maxWidth,
+          height: 200,
+          color: AppColors.grey.withOpacity(0.2),
+          child: const Center(child: Text('No image selected.')),
+        );
+      },
     );
   }
 
@@ -301,131 +522,6 @@ class ScanPage extends StatelessWidget {
                   icon: const Icon(Icons.close, color: Colors.white, size: 30),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTextResultView(BuildContext context) {
-    final provider = Provider.of<ScanProvider>(context);
-    if (provider.isProcessing) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 32),
-          child: CircularProgressIndicator(color: AppColors.primary),
-        ),
-      );
-    }
-    if (provider.scanEntity.extractedText != null &&
-        provider.scanEntity.extractedText!.isNotEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: provider.scanEntity.backgroundColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.grey.withOpacity(0.2)),
-        ),
-        child: Text(
-          provider.scanEntity.extractedText!,
-          style: TextStyle(
-            fontSize: provider.scanEntity.fontSize,
-            color: provider.scanEntity.textColor,
-            fontFamily: provider.scanEntity.fontFamily,
-            fontWeight: provider.scanEntity.isBold
-                ? FontWeight.bold
-                : FontWeight.normal,
-            letterSpacing: provider.scanEntity.characterSpacing,
-            wordSpacing: provider.scanEntity.wordSpacing,
-            height: provider.scanEntity.lineHeight,
-          ),
-        ),
-      );
-    }
-    if (provider.selectedMedia != null) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.grey.withOpacity(0.2)),
-        ),
-        child: const Text(
-          'No text detected in the image. Try another image.',
-          style: TextStyle(fontSize: 16, color: AppColors.grey),
-        ),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildQuickCustomizeButtons(BuildContext context) {
-    final provider = Provider.of<ScanProvider>(context, listen: false);
-    return Row(
-      children: [
-        IconButton(
-          icon: const Icon(Icons.text_decrease, size: 20),
-          onPressed: () {
-            if (provider.scanEntity.fontSize > 12) {
-              provider.updateTextCustomization(
-                  fontSize: provider.scanEntity.fontSize - 2);
-            }
-          },
-          tooltip: 'Decrease Font Size',
-          padding: const EdgeInsets.all(4),
-          constraints: const BoxConstraints(),
-        ),
-        IconButton(
-          icon: const Icon(Icons.text_increase, size: 20),
-          onPressed: () => provider.updateTextCustomization(
-              fontSize: provider.scanEntity.fontSize + 2),
-          tooltip: 'Increase Font Size',
-          padding: const EdgeInsets.all(4),
-          constraints: const BoxConstraints(),
-        ),
-        IconButton(
-          icon: const Icon(Icons.format_bold, size: 20),
-          onPressed: () => provider.updateTextCustomization(
-              isBold: !provider.scanEntity.isBold),
-          color:
-              provider.scanEntity.isBold ? AppColors.primary : AppColors.grey,
-          tooltip: 'Toggle Bold',
-          padding: const EdgeInsets.all(4),
-          constraints: const BoxConstraints(),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _pickImage(BuildContext context) async {
-    final provider = Provider.of<ScanProvider>(context, listen: false);
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Select Image Source'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Gallery'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  provider.pickImage(context, ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Camera'),
-                onTap: () {
-                  Navigator.of(context).pop();
-                  provider.pickImage(context, ImageSource.camera);
-                },
               ),
             ],
           ),

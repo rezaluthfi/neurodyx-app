@@ -14,7 +14,7 @@ class ScanEntity extends Equatable {
 
   const ScanEntity({
     this.extractedText,
-    this.fontFamily = 'OpenDyslexic',
+    this.fontFamily = 'OpenDyslexicMono',
     this.fontSize = 18.0,
     this.characterSpacing = 0.5,
     this.wordSpacing = 5.0,

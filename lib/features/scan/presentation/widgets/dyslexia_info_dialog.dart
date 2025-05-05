@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:neurodyx/core/constants/app_colors.dart';
 import 'package:neurodyx/features/scan/presentation/widgets/text_customization_settings.dart';
 
 void showDyslexiaInfoDialog(BuildContext context) {
@@ -11,6 +10,7 @@ void showDyslexiaInfoDialog(BuildContext context) {
         content: Container(
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.5,
+            maxWidth: MediaQuery.of(context).size.width * 0.8,
           ),
           child: const Scrollbar(
             child: SingleChildScrollView(

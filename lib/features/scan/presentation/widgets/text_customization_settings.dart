@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:neurodyx/core/constants/app_colors.dart';
 import 'package:neurodyx/features/scan/presentation/providers/scan_provider.dart';
+import 'package:neurodyx/features/scan/presentation/widgets/font_utils.dart';
 import 'package:provider/provider.dart';
 
 void showTextCustomizationSettings(BuildContext context) {
@@ -45,17 +47,7 @@ void showTextCustomizationSettings(BuildContext context) {
                   ),
                   child: Text(
                     'This is how your text will look with these settings.',
-                    style: TextStyle(
-                      fontSize: provider.scanEntity.fontSize,
-                      color: provider.scanEntity.textColor,
-                      fontFamily: provider.scanEntity.fontFamily,
-                      fontWeight: provider.scanEntity.isBold
-                          ? FontWeight.bold
-                          : FontWeight.normal,
-                      letterSpacing: provider.scanEntity.characterSpacing,
-                      wordSpacing: provider.scanEntity.wordSpacing,
-                      height: provider.scanEntity.lineHeight,
-                    ),
+                    style: getTextStyle(provider.scanEntity),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -112,14 +104,14 @@ void showTextCustomizationSettings(BuildContext context) {
                 Wrap(
                   spacing: 8,
                   children: [
-                    _buildFontOption(context, 'OpenDyslexic', setModalState,
+                    _buildFontOption(context, 'OpenDyslexicMono', setModalState,
                         provider.updateTextCustomization),
-                    _buildFontOption(context, 'Arial', setModalState,
+                    _buildFontOption(context, 'Lexend Exa', setModalState,
                         provider.updateTextCustomization),
-                    _buildFontOption(context, 'Comic Sans MS', setModalState,
+                    _buildFontOption(context, 'Open Sans', setModalState,
                         provider.updateTextCustomization),
-                    _buildFontOption(context, 'Verdana', setModalState,
-                        provider.updateTextCustomization),
+                    _buildFontOption(context, 'Atkinson Hyperlegible',
+                        setModalState, provider.updateTextCustomization),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -289,6 +281,43 @@ Widget _buildFontOption(
     Function({String? fontFamily}) updateTextCustomization) {
   final provider = Provider.of<ScanProvider>(context, listen: false);
   final isSelected = provider.scanEntity.fontFamily == font;
+
+  TextStyle optionStyle;
+  switch (font) {
+    case 'Lexend Exa':
+      optionStyle = GoogleFonts.lexendExa(
+        textStyle: TextStyle(
+          color: isSelected ? Colors.white : AppColors.textPrimary,
+          fontSize: 14,
+        ),
+      );
+      break;
+    case 'Open Sans':
+      optionStyle = GoogleFonts.openSans(
+        textStyle: TextStyle(
+          color: isSelected ? Colors.white : AppColors.textPrimary,
+          fontSize: 14,
+        ),
+      );
+      break;
+    case 'Atkinson Hyperlegible':
+      optionStyle = GoogleFonts.atkinsonHyperlegible(
+        textStyle: TextStyle(
+          color: isSelected ? Colors.white : AppColors.textPrimary,
+          fontSize: 14,
+        ),
+      );
+      break;
+    case 'OpenDyslexicMono':
+    default:
+      optionStyle = TextStyle(
+        color: isSelected ? Colors.white : AppColors.textPrimary,
+        fontFamily: 'OpenDyslexicMono',
+        fontSize: 14,
+      );
+      break;
+  }
+
   return GestureDetector(
     onTap: () {
       setModalState(() => updateTextCustomization(fontFamily: font));
@@ -306,11 +335,7 @@ Widget _buildFontOption(
       ),
       child: Text(
         font,
-        style: TextStyle(
-          color: isSelected ? Colors.white : AppColors.textPrimary,
-          fontFamily: font,
-          fontSize: 14,
-        ),
+        style: optionStyle,
       ),
     ),
   );

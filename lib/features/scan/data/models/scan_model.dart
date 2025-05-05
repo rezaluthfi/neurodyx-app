@@ -1,7 +1,7 @@
 import 'package:neurodyx/features/scan/domain/entities/scan_entity.dart';
 
 class ScanModel extends ScanEntity {
-  ScanModel({
+  const ScanModel({
     super.extractedText,
     super.fontFamily,
     super.fontSize,

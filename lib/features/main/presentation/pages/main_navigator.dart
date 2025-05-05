@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:neurodyx/core/constants/assets_path.dart';
 import 'package:neurodyx/core/constants/app_colors.dart';
 import 'package:neurodyx/features/home/presentation/pages/home_page.dart';
@@ -23,11 +24,17 @@ class _MainNavigatorState extends State<MainNavigator>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Use ScanProvider's hideNavBarNotifier for ScanPage
     final scanProvider = Provider.of<ScanProvider>(context, listen: false);
     _pages = [
       const HomePage(),
-      ScanPage(hideNavBarNotifier: scanProvider.hideNavBarNotifier),
+      ScanPage(
+        hideNavBarNotifier: scanProvider.hideNavBarNotifier,
+        onClearMedia: () {
+          setState(() {
+            _selectedIndex = 0; // Switch to HomePage
+          });
+        },
+      ),
       const ProfilePage(),
     ];
     debugPrint("MainNavigator initialized with $_pages");
@@ -46,9 +53,70 @@ class _MainNavigatorState extends State<MainNavigator>
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    if (index == 1) {
+      _showImageSourceDialog();
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+
+  void _showImageSourceDialog() {
+    final scanProvider = Provider.of<ScanProvider>(context, listen: false);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Select Image Source',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Capture text from images or documents to help you read better',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.grey,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading:
+                    const Icon(Icons.photo_library, color: AppColors.primary),
+                title: const Text('Gallery'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _selectedIndex = 1; // Switch to ScanPage immediately
+                  });
+                  scanProvider.pickImage(context, ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+                title: const Text('Camera'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  setState(() {
+                    _selectedIndex = 1; // Switch to ScanPage immediately
+                  });
+                  scanProvider.pickImage(context, ImageSource.camera);
+                },
+              ),
+            ],
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -116,9 +184,10 @@ class _MainNavigatorState extends State<MainNavigator>
                 width: 64,
                 height: 64,
                 child: FloatingActionButton(
-                  onPressed: () => _onItemTapped(1),
+                  onPressed: _showImageSourceDialog,
                   backgroundColor: AppColors.white,
                   foregroundColor: AppColors.white,
+                  elevation: 4,
                   shape: const CircleBorder(),
                   child: Image.asset(
                     AssetPath.iconCamera,
