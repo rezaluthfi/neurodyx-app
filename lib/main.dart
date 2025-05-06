@@ -5,7 +5,9 @@ import 'package:neurodyx/core/providers/font_providers.dart';
 import 'package:neurodyx/core/wrappers/auth_wrapper.dart';
 import 'package:neurodyx/features/auth/presentation/providers/auth_provider.dart';
 import 'package:neurodyx/features/scan/data/repositories/scan_repository.dart';
+import 'package:neurodyx/features/scan/data/services/text_action_service.dart';
 import 'package:neurodyx/features/scan/data/services/text_recognition_service.dart';
+import 'package:neurodyx/features/scan/data/services/tts_service.dart';
 import 'package:neurodyx/features/scan/presentation/providers/scan_provider.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
@@ -43,6 +45,8 @@ class MyApp extends StatelessWidget {
             ),
             hideNavBarNotifier: ValueNotifier<bool>(false),
             fontProvider: Provider.of<FontProvider>(context, listen: false),
+            ttsService: TtsService(),
+            textActionService: TextActionService(),
           ),
         ),
       ],

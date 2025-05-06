@@ -31,7 +31,7 @@ class _MainNavigatorState extends State<MainNavigator>
         hideNavBarNotifier: scanProvider.hideNavBarNotifier,
         onClearMedia: () {
           setState(() {
-            _selectedIndex = 0; // Switch to HomePage
+            _selectedIndex = 1; // Switch to ScanPage immediately
           });
         },
       ),

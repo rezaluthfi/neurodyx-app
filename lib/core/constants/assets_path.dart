@@ -12,6 +12,10 @@ class AssetPath {
   static const String iconCamera = 'assets/icons/png/ic_camera.png';
   static const String iconProfileSettings =
       'assets/icons/png/ic_profile_settings.png';
+  static const String iconPlay = 'assets/icons/png/ic_play.png';
+  static const String iconPause = 'assets/icons/png/ic_pause.png';
+  static const String iconDownload = 'assets/icons/png/ic_download.png';
+  static const String iconCustomize = 'assets/icons/png/ic_customize.png';
 
   static const String iconSearch3D = 'assets/icons/png/ic_search_3d.png';
   static const String iconPaperboard3D =
