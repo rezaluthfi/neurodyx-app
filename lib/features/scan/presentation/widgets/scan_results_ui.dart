@@ -141,12 +141,15 @@ class _ScanResultsUIState extends State<ScanResultsUI> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        // Audio Button
-        Selector<ScanProvider, (bool, bool)>(
-          selector: (_, provider) =>
-              (provider.isTtsPlaying, provider.isTtsInitializing),
-          builder: (_, ttsState, __) {
-            final (isTtsPlaying, isTtsInitializing) = ttsState;
+        Consumer<ScanProvider>(
+          builder: (context, scanProvider, _) {
+            final isTtsPlaying = scanProvider.isTtsPlaying;
+            final isTtsInitializing = scanProvider.isTtsInitializing;
+
+            // Tambahkan logging untuk debugging
+            debugPrint(
+                'Rebuilding Audio Button: Playing=$isTtsPlaying, Initializing=$isTtsInitializing');
+
             return ScanActionButton(
               iconWidget: isTtsInitializing
                   ? const SizedBox(
@@ -169,7 +172,7 @@ class _ScanResultsUIState extends State<ScanResultsUI> {
             );
           },
         ),
-        
+
         // Customize Button
         ScanActionButton(
           iconWidget: Image.asset(

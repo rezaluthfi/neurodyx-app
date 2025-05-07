@@ -304,6 +304,14 @@ class TtsService extends ChangeNotifier {
     String? currentTtsText,
     String? detectedLanguage,
   }) {
+    bool stateChanged = false;
+
+    if (isTtsPlaying != null && _state.isTtsPlaying != isTtsPlaying) {
+      debugPrint(
+          'TTS isTtsPlaying changed: ${_state.isTtsPlaying} -> $isTtsPlaying');
+      stateChanged = true;
+    }
+
     _state = _state.copyWith(
       isTtsPlaying: isTtsPlaying,
       isTtsInitializing: isTtsInitializing,
@@ -312,7 +320,13 @@ class TtsService extends ChangeNotifier {
       currentTtsText: currentTtsText,
       detectedLanguage: detectedLanguage,
     );
-    notifyListeners();
+
+    if (stateChanged ||
+        isTtsInitializing != null ||
+        isSettingSpeechRate != null) {
+      notifyListeners();
+      debugPrint('TtsService notified listeners of state change');
+    }
   }
 
   // Dispose of the TTS service
