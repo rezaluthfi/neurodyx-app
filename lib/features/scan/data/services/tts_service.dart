@@ -34,7 +34,8 @@ class TtsService extends ChangeNotifier {
   // Initialize all necessary components
   void _initComponents() {
     flutterTts = FlutterTts();
-    _engineManager = TtsEngineManager(flutterTts);
+    _engineManager =
+        TtsEngineManager(); // Kompatibel dengan constructor tanpa parameter
     _languageDetector = LanguageDetector();
     _textPreprocessor = TextPreprocessor();
     _voiceSelector = VoiceSelector();

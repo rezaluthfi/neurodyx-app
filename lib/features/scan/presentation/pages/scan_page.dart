@@ -45,13 +45,15 @@ class _ScanPageState extends State<ScanPage> {
     debugPrint('ScanPage build');
     return Consumer<ScanProvider>(
       builder: (context, provider, _) {
-        debugPrint('Consumer rebuild, isProcessing: ${provider.isProcessing}');
+        debugPrint(
+            'Consumer rebuild, isProcessing: ${provider.isProcessing}, selectedMedia: ${provider.selectedMedia != null}');
         return Scaffold(
           backgroundColor: AppColors.offWhite,
           appBar: provider.selectedMedia != null
               ? AppBar(
                   backgroundColor: AppColors.offWhite,
                   elevation: 0,
+                  automaticallyImplyLeading: false, // Prevent back button
                   title: const Text(
                     'Scan Result',
                     style: TextStyle(
@@ -73,6 +75,7 @@ class _ScanPageState extends State<ScanPage> {
               : AppBar(
                   backgroundColor: AppColors.offWhite,
                   elevation: 0,
+                  automaticallyImplyLeading: false, // Prevent back button
                   title: const Text(
                     'Scan Text',
                     style: TextStyle(

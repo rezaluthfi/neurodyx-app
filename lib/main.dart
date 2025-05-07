@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:neurodyx/core/providers/font_providers.dart';
 import 'package:neurodyx/core/wrappers/auth_wrapper.dart';
 import 'package:neurodyx/features/auth/presentation/providers/auth_provider.dart';
+import 'package:neurodyx/features/chat/presentation/providers/chat_provider.dart';
 import 'package:neurodyx/features/scan/data/repositories/scan_repository.dart';
 import 'package:neurodyx/features/scan/data/services/text_action_service.dart';
 import 'package:neurodyx/features/scan/data/services/text_recognition_service.dart';
@@ -23,6 +25,9 @@ void main() async {
   // Initialize FontProvider
   final fontProvider = FontProvider();
   await fontProvider.initialize();
+
+  // Load environment variables
+  await dotenv.load(fileName: '.env');
 
   runApp(MyApp(fontProvider: fontProvider));
 }
@@ -49,6 +54,7 @@ class MyApp extends StatelessWidget {
             textActionService: TextActionService(),
           ),
         ),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: Consumer<FontProvider>(
         builder: (context, fontProvider, child) {

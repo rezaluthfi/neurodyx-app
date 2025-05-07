@@ -3,52 +3,60 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 class TtsEngineManager {
-  final FlutterTts flutterTts;
+  final FlutterTts _flutterTts;
 
-  TtsEngineManager(this.flutterTts);
+  TtsEngineManager() : _flutterTts = FlutterTts();
 
-  // Initialize the TTS engine with event handlers
+  // Initialize the TTS engine with optional event handlers
   Future<void> initialize({
-    required Function onStart,
-    required Function onComplete,
-    required Function onCancel,
-    required Function onError,
+    Function? onStart,
+    Function? onComplete,
+    Function? onCancel,
+    Function(String)? onError,
   }) async {
-    flutterTts.setStartHandler(() {
-      debugPrint('TTS started');
-      onStart();
-    });
+    if (onStart != null) {
+      _flutterTts.setStartHandler(() {
+        debugPrint('TTS started');
+        onStart();
+      });
+    }
 
-    flutterTts.setCompletionHandler(() {
-      debugPrint('TTS completed');
-      onComplete();
-    });
+    if (onComplete != null) {
+      _flutterTts.setCompletionHandler(() {
+        debugPrint('TTS completed');
+        onComplete();
+      });
+    }
 
-    flutterTts.setCancelHandler(() {
-      debugPrint('TTS cancelled');
-      onCancel();
-    });
+    if (onCancel != null) {
+      _flutterTts.setCancelHandler(() {
+        debugPrint('TTS cancelled');
+        onCancel();
+      });
+    }
 
-    flutterTts.setErrorHandler((msg) {
-      debugPrint('TTS Error: $msg');
-      onError(msg);
-    });
+    if (onError != null) {
+      _flutterTts.setErrorHandler((msg) {
+        debugPrint('TTS Error: $msg');
+        onError(msg);
+      });
+    }
 
     try {
-      await flutterTts.setVolume(1.0);
-      await flutterTts.setPitch(1.0);
+      await _flutterTts.setVolume(1.0);
+      await _flutterTts.setPitch(1.0);
       debugPrint('TTS engine initialized successfully');
     } catch (e) {
       debugPrint('TTS Initialization Error: $e');
-      throw e;
+      rethrow;
     }
   }
 
-  //Set the speech rate for the TTS engine
+  // Set the speech rate for the TTS engine
   Future<void> setSpeechRate(double rate) async {
     try {
       debugPrint('Setting speech rate to: $rate');
-      await flutterTts.setSpeechRate(rate).timeout(
+      await _flutterTts.setSpeechRate(rate).timeout(
         const Duration(seconds: 2),
         onTimeout: () {
           throw TimeoutException('Failed to set speech rate');
@@ -56,14 +64,14 @@ class TtsEngineManager {
       );
     } catch (e) {
       debugPrint('Error setting speech rate: $e');
-      throw e;
+      rethrow;
     }
   }
 
   // Stop the TTS playback
   Future<void> stop() async {
     try {
-      await flutterTts.stop().timeout(
+      await _flutterTts.stop().timeout(
         const Duration(seconds: 2),
         onTimeout: () {
           throw TimeoutException('Failed to stop TTS');
@@ -72,14 +80,14 @@ class TtsEngineManager {
       debugPrint('TTS stopped successfully');
     } catch (e) {
       debugPrint('Error stopping TTS: $e');
-      throw e;
+      rethrow;
     }
   }
 
   // Start TTS playback with the given text
   Future<void> speak(String text) async {
     try {
-      await flutterTts.speak(text).timeout(
+      await _flutterTts.speak(text).timeout(
         const Duration(seconds: 2),
         onTimeout: () {
           throw TimeoutException('Failed to start TTS');
@@ -88,14 +96,14 @@ class TtsEngineManager {
       debugPrint('TTS started speaking');
     } catch (e) {
       debugPrint('Error starting TTS: $e');
-      throw e;
+      rethrow;
     }
   }
 
   // Get available languages for TTS
   Future<List<dynamic>> getAvailableLanguages() async {
     try {
-      return await flutterTts.getLanguages;
+      return await _flutterTts.getLanguages;
     } catch (e) {
       debugPrint('Error getting available languages: $e');
       return [];
@@ -105,10 +113,15 @@ class TtsEngineManager {
   // Get available voices for TTS
   Future<List<dynamic>> getAvailableVoices() async {
     try {
-      return await flutterTts.getVoices;
+      return await _flutterTts.getVoices;
     } catch (e) {
       debugPrint('Error getting available voices: $e');
       return [];
     }
+  }
+
+  // Dispose the TTS engine
+  void dispose() {
+    _flutterTts.stop();
   }
 }

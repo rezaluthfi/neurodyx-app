@@ -13,14 +13,14 @@ class ScanInitialUI extends StatelessWidget {
         children: [
           // Icon camera with circle background and border
           Container(
-            padding: const EdgeInsets.all(16), 
-            decoration: BoxDecoration(
-              color: AppColors.white, 
-              shape: BoxShape.circle, 
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: AppColors.white,
+              shape: BoxShape.circle,
             ),
             child: Image.asset(
               AssetPath.iconCamera,
-              width: 72, 
+              width: 72,
               height: 72,
             ),
           ),

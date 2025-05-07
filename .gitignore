@@ -41,3 +41,22 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Firebase configuration files
+google-services.json
+GoogleService-Info.plist
+firebase_options.dart
+firebase.json
+.firebaserc
+
+# API keys and secrets
+**/*/res/values/secrets.xml
+**/*/res/values/api_keys.xml
+
+# Local configuration
+local.properties

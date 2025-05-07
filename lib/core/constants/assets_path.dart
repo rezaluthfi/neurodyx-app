@@ -2,10 +2,12 @@ class AssetPath {
   // Logo
   static const String iconLogo = 'assets/images/logo/icon_logo.png';
   static const String logo = 'assets/images/logo/logo_app.png';
+  static const String logoGemini = 'assets/images/logo/logo_gemini.png';
 
   // Icons svg
   static const String iconArrowRight = 'assets/icons/svg/ic_arrow_right.svg';
   static const String iconGoogle = 'assets/icons/svg/ic_google.svg';
+  static const String iconGemini = 'assets/icons/svg/ic_gemini.svg';
 
   // Icons png
   static const String iconHome = 'assets/icons/png/ic_home.png';
@@ -16,6 +18,7 @@ class AssetPath {
   static const String iconPause = 'assets/icons/png/ic_pause.png';
   static const String iconDownload = 'assets/icons/png/ic_download.png';
   static const String iconCustomize = 'assets/icons/png/ic_customize.png';
+  static const String iconSend = 'assets/icons/png/ic_send.png';
 
   static const String iconSearch3D = 'assets/icons/png/ic_search_3d.png';
   static const String iconPaperboard3D =

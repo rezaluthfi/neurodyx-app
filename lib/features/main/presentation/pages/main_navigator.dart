@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:neurodyx/core/constants/assets_path.dart';
 import 'package:neurodyx/core/constants/app_colors.dart';
@@ -6,6 +7,9 @@ import 'package:neurodyx/features/home/presentation/pages/home_page.dart';
 import 'package:neurodyx/features/profile/presentation/pages/profile_page.dart';
 import 'package:neurodyx/features/scan/presentation/pages/scan_page.dart';
 import 'package:neurodyx/features/scan/presentation/providers/scan_provider.dart';
+import 'package:neurodyx/features/chat/presentation/pages/chat_page.dart';
+import 'package:neurodyx/features/chat/presentation/pages/chat_history_page.dart';
+import 'package:neurodyx/features/chat/presentation/providers/chat_provider.dart';
 import 'package:provider/provider.dart';
 
 class MainNavigator extends StatefulWidget {
@@ -18,6 +22,7 @@ class MainNavigator extends StatefulWidget {
 class _MainNavigatorState extends State<MainNavigator>
     with WidgetsBindingObserver {
   int _selectedIndex = 0;
+  bool _isNavigating = false;
   late final List<Widget> _pages;
 
   @override
@@ -38,6 +43,10 @@ class _MainNavigatorState extends State<MainNavigator>
       const ProfilePage(),
     ];
     debugPrint("MainNavigator initialized with $_pages");
+    // Initialize ChatProvider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ChatProvider>(context, listen: false).initialize();
+    });
   }
 
   @override
@@ -119,71 +128,156 @@ class _MainNavigatorState extends State<MainNavigator>
     );
   }
 
+  Future<void> _navigateToChatPage() async {
+    if (_isNavigating) {
+      debugPrint('Navigation already in progress, ignoring');
+      return;
+    }
+    _isNavigating = true;
+    try {
+      final chatProvider = Provider.of<ChatProvider>(context, listen: false);
+      await chatProvider.initialize();
+      final conversations = chatProvider.allConversations;
+      debugPrint(
+          'Navigating to chat, conversations count: ${conversations.length}');
+
+      if (conversations.isEmpty) {
+        await chatProvider.createNewConversation(title: 'New Conversation');
+        debugPrint('Created new conversation for first-time chat access');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ChatPage(),
+            settings: const RouteSettings(arguments: 'disable_hero'),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const ChatHistoryPage(),
+            settings: const RouteSettings(arguments: 'disable_hero'),
+          ),
+        );
+      }
+    } finally {
+      _isNavigating = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     debugPrint("MainNavigator building with selected index: $_selectedIndex");
+
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    const navBarHeight = 80.0;
 
     final bottomNavTheme = Theme.of(context).copyWith(
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
     );
 
-    return Consumer<ScanProvider>(
-      builder: (context, scanProvider, child) {
-        return Scaffold(
-          backgroundColor: Colors.white,
-          body: IndexedStack(
-            index: _selectedIndex,
-            children: _pages,
-          ),
-          bottomNavigationBar: ValueListenableBuilder<bool>(
-            valueListenable: scanProvider.hideNavBarNotifier,
-            builder: (context, hideNavBar, child) {
-              if (hideNavBar && _selectedIndex == 1) {
-                return const SizedBox.shrink();
-              }
-              return Theme(
-                data: bottomNavTheme,
-                child: BottomAppBar(
-                  notchMargin: 8,
-                  shape: const CircularNotchedRectangle(),
-                  color: AppColors.white,
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          _buildNavItem(
-                            icon: Icons.home,
-                            assetPath: AssetPath.iconHome,
-                            label: 'Home',
-                            index: 0,
+    return PopScope(
+      canPop: false, // Prevent popping MainNavigator
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        // Always reset to HomePage on back press
+        setState(() {
+          _selectedIndex = 0;
+        });
+        debugPrint('Back button pressed, resetting to HomePage');
+      },
+      child: Consumer<ScanProvider>(
+        builder: (context, scanProvider, child) {
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Stack(
+              children: [
+                IndexedStack(
+                  index: _selectedIndex,
+                  children: _pages,
+                ),
+                ValueListenableBuilder<bool>(
+                  valueListenable: scanProvider.hideNavBarNotifier,
+                  builder: (context, hideNavBar, child) {
+                    final showChatFab = !hideNavBar || _selectedIndex != 1;
+
+                    if (!showChatFab) {
+                      return const SizedBox.shrink();
+                    }
+
+                    final fabBottomPosition =
+                        navBarHeight + bottomPadding + 20.0;
+
+                    return Positioned(
+                      bottom: fabBottomPosition,
+                      right: 24,
+                      child: HeroMode(
+                        enabled: false,
+                        child: FloatingActionButton(
+                          onPressed: _navigateToChatPage,
+                          backgroundColor: AppColors.white,
+                          elevation: 6,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(16)),
                           ),
-                          _buildNavItem(
-                            icon: Icons.person,
-                            assetPath: AssetPath.iconProfileSettings,
-                            label: 'Profile',
-                            index: 2,
+                          child: SvgPicture.asset(
+                            AssetPath.iconGemini,
+                            width: 28,
+                            height: 28,
                           ),
-                        ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            bottomNavigationBar: ValueListenableBuilder<bool>(
+              valueListenable: scanProvider.hideNavBarNotifier,
+              builder: (context, hideNavBar, child) {
+                if (hideNavBar && _selectedIndex == 1) {
+                  return const SizedBox.shrink();
+                }
+                return Theme(
+                  data: bottomNavTheme,
+                  child: BottomAppBar(
+                    notchMargin: 8,
+                    shape: const CircularNotchedRectangle(),
+                    color: AppColors.white,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            _buildNavItem(
+                              icon: Icons.home,
+                              assetPath: AssetPath.iconHome,
+                              label: 'Home',
+                              index: 0,
+                            ),
+                            _buildNavItem(
+                              icon: Icons.person,
+                              assetPath: AssetPath.iconProfileSettings,
+                              label: 'Profile',
+                              index: 2,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-          floatingActionButton: ValueListenableBuilder<bool>(
-            valueListenable: scanProvider.hideNavBarNotifier,
-            builder: (context, hideNavBar, child) {
-              if (hideNavBar && _selectedIndex == 1) {
-                return const SizedBox.shrink();
-              }
-              return SizedBox(
-                width: 64,
-                height: 64,
-                child: FloatingActionButton(
+                );
+              },
+            ),
+            floatingActionButton: ValueListenableBuilder<bool>(
+              valueListenable: scanProvider.hideNavBarNotifier,
+              builder: (context, hideNavBar, child) {
+                if (hideNavBar && _selectedIndex == 1) {
+                  return const SizedBox.shrink();
+                }
+                return FloatingActionButton(
                   onPressed: _showImageSourceDialog,
                   backgroundColor: AppColors.white,
                   foregroundColor: AppColors.white,
@@ -194,15 +288,15 @@ class _MainNavigatorState extends State<MainNavigator>
                     width: 28,
                     height: 28,
                   ),
-                ),
-              );
-            },
-          ),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
-          extendBody: true,
-        );
-      },
+                );
+              },
+            ),
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerDocked,
+            extendBody: true,
+          );
+        },
+      ),
     );
   }
 
