@@ -69,7 +69,9 @@ class TtsEngineManager {
           throw TimeoutException('Failed to stop TTS');
         },
       );
-      debugPrint('TTS stopped successfully');
+      // Delay to ensure TTS stops completely
+      await Future.delayed(const Duration(milliseconds: 100));
+      debugPrint('TTS stopped successfully with delay');
     } catch (e) {
       debugPrint('Error stopping TTS: $e');
       throw e;
