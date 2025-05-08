@@ -61,6 +61,16 @@ class ChatRepository {
     }
   }
 
+  // Save a single conversation
+  Future<void> saveConversation(ChatConversation conversation) async {
+    try {
+      await _historyService.saveConversation(conversation);
+      debugPrint('Saved conversation: ${conversation.id}');
+    } catch (e) {
+      debugPrint('Error saving conversation: $e');
+    }
+  }
+
   // Save all conversations
   Future<void> saveConversations() async {
     try {

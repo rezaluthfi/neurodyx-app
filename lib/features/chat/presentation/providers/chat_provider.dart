@@ -38,6 +38,14 @@ class ChatProvider extends ChangeNotifier {
   // Set current conversation
   void setCurrentConversation(String conversationId) {
     _currentConversation = _chatRepository.getConversationById(conversationId);
+
+    // Clean up any loading messages in the conversation
+    if (_currentConversation != null) {
+      _currentConversation!.messages.removeWhere((msg) => msg.isLoading);
+      // Save the cleaned conversation
+      _chatRepository.saveConversation(_currentConversation!);
+    }
+
     debugPrint('Set current conversation: ${_currentConversation?.id}');
     notifyListeners();
   }
@@ -152,6 +160,14 @@ class ChatProvider extends ChangeNotifier {
       final conversations = _chatRepository.getAllConversations();
       debugPrint('Loaded conversations: ${conversations.length}');
 
+      // Clean up any loading messages in all conversations
+      for (var conversation in conversations) {
+        if (conversation.messages.any((msg) => msg.isLoading)) {
+          conversation.messages.removeWhere((msg) => msg.isLoading);
+          await _chatRepository.saveConversation(conversation);
+        }
+      }
+
       if (conversations.isNotEmpty) {
         _currentConversation ??= conversations.first;
       } else {
@@ -180,11 +196,19 @@ class ChatProvider extends ChangeNotifier {
     if (_currentConversation?.id == conversationId) {
       if (conversations.isNotEmpty) {
         _currentConversation = conversations.first;
+        // Clean up any loading messages in the new current conversation
+        _currentConversation!.messages.removeWhere((msg) => msg.isLoading);
         debugPrint('New current conversation: ${_currentConversation?.id}');
       } else {
         _currentConversation = null;
         debugPrint('No conversations left, current set to null');
       }
+    }
+
+    // Clean up any loading messages in all conversations
+    for (var conversation in conversations) {
+      conversation.messages.removeWhere((msg) => msg.isLoading);
+      await _chatRepository.saveConversation(conversation);
     }
 
     notifyListeners();
@@ -207,11 +231,19 @@ class ChatProvider extends ChangeNotifier {
     if (conversationIds.contains(_currentConversation?.id)) {
       if (conversations.isNotEmpty) {
         _currentConversation = conversations.first;
+        // Clean up any loading messages in the new current conversation
+        _currentConversation!.messages.removeWhere((msg) => msg.isLoading);
         debugPrint('New current conversation: ${_currentConversation?.id}');
       } else {
         _currentConversation = null;
         debugPrint('No conversations left, current set to null');
       }
+    }
+
+    // Clean up any loading messages in all conversations
+    for (var conversation in conversations) {
+      conversation.messages.removeWhere((msg) => msg.isLoading);
+      await _chatRepository.saveConversation(conversation);
     }
 
     notifyListeners();
@@ -244,6 +276,12 @@ class ChatProvider extends ChangeNotifier {
       final conversations = _chatRepository.getAllConversations();
       debugPrint('Reloaded conversations: ${conversations.length}');
 
+      // Clean up any loading messages in all conversations
+      for (var conversation in conversations) {
+        conversation.messages.removeWhere((msg) => msg.isLoading);
+        await _chatRepository.saveConversation(conversation);
+      }
+
       if (_currentConversation != null) {
         final stillExists =
             conversations.any((c) => c.id == _currentConversation!.id);
@@ -251,6 +289,10 @@ class ChatProvider extends ChangeNotifier {
           _currentConversation = conversations.first;
         } else if (!stillExists) {
           _currentConversation = null;
+        } else {
+          // Re-fetch current conversation to get the clean version
+          _currentConversation =
+              _chatRepository.getConversationById(_currentConversation!.id);
         }
       } else if (conversations.isNotEmpty) {
         _currentConversation = conversations.first;

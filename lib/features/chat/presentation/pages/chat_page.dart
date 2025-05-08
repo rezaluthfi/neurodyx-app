@@ -114,19 +114,46 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
+  // Improved helper method for back navigation with consistent behavior
+  void _handleBackNavigation(BuildContext context, dynamic args) {
+    debugPrint('ChatPage back navigation triggered with args: $args');
+
+    // Parse navigation source information
+    final Map<String, dynamic> routeMap =
+        args is Map<String, dynamic> ? args : {};
+    final String? fromSource = routeMap['from'] as String?;
+    final int sourceTabIndex = routeMap['sourceTabIndex'] ?? 0;
+
+    if (fromSource == 'history') {
+      // Coming from ChatHistoryPage, simply pop back to history
+      debugPrint('Navigating back to ChatHistoryPage');
+      Navigator.pop(context);
+    } else {
+      // Coming from MainNavigator or other source, return to MainNavigator with original tab
+      debugPrint('Navigating back to MainNavigator with tab: $sourceTabIndex');
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => MainNavigator(
+            initialIndex: sourceTabIndex,
+          ),
+        ),
+        (route) => false, // Clear all routes from stack
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Get arguments from the route
+    final args = ModalRoute.of(context)?.settings.arguments;
+    debugPrint('ChatPage build with args: $args');
+
     return PopScope(
-      canPop: false,
+      canPop: false, // Handle back behavior manually
       onPopInvoked: (didPop) {
         if (didPop) return;
-        debugPrint('ChatPage back button pressed, navigating to MainNavigator');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const MainNavigator(),
-          ),
-        );
+        // Use the helper method for consistent back navigation
+        _handleBackNavigation(context, args);
       },
       child: Scaffold(
         resizeToAvoidBottomInset: true,
@@ -144,26 +171,24 @@ class _ChatPageState extends State<ChatPage> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              debugPrint(
-                  'ChatPage back icon pressed, navigating to MainNavigator');
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MainNavigator(),
-                ),
-              );
-            },
+            // Using same helper method for appbar back button
+            onPressed: () => _handleBackNavigation(context, args),
             tooltip: 'Back',
           ),
           actions: [
             IconButton(
               icon: const Icon(Icons.history),
               onPressed: () {
+                final Map<String, dynamic> routeMap =
+                    args is Map<String, dynamic> ? args : {};
+                final int sourceTabIndex = routeMap['sourceTabIndex'] ?? 0;
+
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ChatHistoryPage(),
+                    builder: (context) => ChatHistoryPage(
+                      sourceTabIndex: sourceTabIndex,
+                    ),
                   ),
                 );
               },

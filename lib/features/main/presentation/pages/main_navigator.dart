@@ -13,7 +13,12 @@ import 'package:neurodyx/features/chat/presentation/providers/chat_provider.dart
 import 'package:provider/provider.dart';
 
 class MainNavigator extends StatefulWidget {
-  const MainNavigator({super.key});
+  final int initialIndex;
+
+  const MainNavigator({
+    super.key,
+    this.initialIndex = 0, // Default to HomePage
+  });
 
   @override
   State<MainNavigator> createState() => _MainNavigatorState();
@@ -21,13 +26,14 @@ class MainNavigator extends StatefulWidget {
 
 class _MainNavigatorState extends State<MainNavigator>
     with WidgetsBindingObserver {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   bool _isNavigating = false;
   late final List<Widget> _pages;
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = widget.initialIndex; // Initialize with the provided index
     WidgetsBinding.instance.addObserver(this);
     final scanProvider = Provider.of<ScanProvider>(context, listen: false);
     _pages = [
@@ -36,13 +42,13 @@ class _MainNavigatorState extends State<MainNavigator>
         hideNavBarNotifier: scanProvider.hideNavBarNotifier,
         onClearMedia: () {
           setState(() {
-            _selectedIndex = 1; // Switch to ScanPage immediately
+            _selectedIndex = 1;
           });
         },
       ),
       const ProfilePage(),
     ];
-    debugPrint("MainNavigator initialized with $_pages");
+
     // Initialize ChatProvider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ChatProvider>(context, listen: false).initialize();
@@ -128,7 +134,7 @@ class _MainNavigatorState extends State<MainNavigator>
     );
   }
 
-  Future<void> _navigateToChatPage() async {
+  void _navigateToChatPage() async {
     if (_isNavigating) {
       debugPrint('Navigation already in progress, ignoring');
       return;
@@ -138,27 +144,37 @@ class _MainNavigatorState extends State<MainNavigator>
       final chatProvider = Provider.of<ChatProvider>(context, listen: false);
       await chatProvider.initialize();
       final conversations = chatProvider.allConversations;
+
+      // Store current tab index for consistent back navigation
+      final currentTabIndex = _selectedIndex;
       debugPrint(
-          'Navigating to chat, conversations count: ${conversations.length}');
+          'Navigating to chat from tab: $currentTabIndex, conversations count: ${conversations.length}');
 
       if (conversations.isEmpty) {
         await chatProvider.createNewConversation(title: 'New Conversation');
         debugPrint('Created new conversation for first-time chat access');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ChatPage(),
-            settings: const RouteSettings(arguments: 'disable_hero'),
-          ),
-        );
+
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const ChatPage(),
+              settings: RouteSettings(arguments: {
+                'from': 'main',
+                'sourceTabIndex': currentTabIndex,
+              }),
+            ),
+          );
+        }
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ChatHistoryPage(),
-            settings: const RouteSettings(arguments: 'disable_hero'),
-          ),
-        );
+        if (mounted) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => ChatHistoryPage(
+                sourceTabIndex: currentTabIndex,
+              ),
+            ),
+          );
+        }
       }
     } finally {
       _isNavigating = false;
@@ -179,13 +195,16 @@ class _MainNavigatorState extends State<MainNavigator>
 
     return PopScope(
       canPop: false, // Prevent popping MainNavigator
-      onPopInvokedWithResult: (didPop, result) {
+      onPopInvoked: (didPop) {
         if (didPop) return;
-        // Always reset to HomePage on back press
-        setState(() {
-          _selectedIndex = 0;
-        });
-        debugPrint('Back button pressed, resetting to HomePage');
+        // If we're not already on the Home tab, navigate to it
+        if (_selectedIndex != 0) {
+          setState(() {
+            _selectedIndex = 0;
+          });
+          debugPrint(
+              'MainNavigator back button pressed, switching to HomePage');
+        }
       },
       child: Consumer<ScanProvider>(
         builder: (context, scanProvider, child) {

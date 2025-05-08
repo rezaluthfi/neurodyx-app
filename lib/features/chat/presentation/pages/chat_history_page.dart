@@ -8,7 +8,12 @@ import '../providers/chat_provider.dart';
 import 'chat_page.dart';
 
 class ChatHistoryPage extends StatefulWidget {
-  const ChatHistoryPage({super.key});
+  final int sourceTabIndex;
+
+  const ChatHistoryPage({
+    super.key,
+    this.sourceTabIndex = 0,
+  });
 
   @override
   State<ChatHistoryPage> createState() => _ChatHistoryPageState();
@@ -25,7 +30,7 @@ class _ChatHistoryPageState extends State<ChatHistoryPage> {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     debugPrint(
-        'ChatHistoryPage initialized, isSelectionMode: $_isSelectionMode');
+        'ChatHistoryPage initialized with sourceTabIndex: ${widget.sourceTabIndex}, isSelectionMode: $_isSelectionMode');
   }
 
   @override
@@ -194,23 +199,31 @@ class _ChatHistoryPageState extends State<ChatHistoryPage> {
     }
   }
 
+  // Improved helper method for back navigation
+  void _handleBackToMainNavigator(BuildContext context) {
+    debugPrint(
+        'ChatHistoryPage back to MainNavigator triggered with tab: ${widget.sourceTabIndex}');
+
+    // Ensure we're respecting the original source tab that was passed to this page
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => MainNavigator(
+          initialIndex: widget.sourceTabIndex,
+        ),
+      ),
+      (route) =>
+          false, // Clear existing routes from stack to prevent back button issues
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: true,
+      canPop: false, // Handle back behavior manually for consistency
       onPopInvoked: (didPop) {
-        if (didPop) {
-          debugPrint('ChatHistoryPage default pop allowed');
-          return;
-        }
-        debugPrint(
-            'ChatHistoryPage back button pressed, navigating to MainNavigator');
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const MainNavigator(),
-          ),
-        );
+        if (didPop) return;
+        // Use helper method for consistent navigation behavior
+        _handleBackToMainNavigator(context);
       },
       child: Scaffold(
         appBar: AppBar(
@@ -228,16 +241,7 @@ class _ChatHistoryPageState extends State<ChatHistoryPage> {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: () {
-              debugPrint(
-                  'ChatHistoryPage AppBar back button pressed, navigating to MainNavigator');
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const MainNavigator(),
-                ),
-              );
-            },
+            onPressed: () => _handleBackToMainNavigator(context),
             tooltip: 'Back',
           ),
           actions: [
@@ -397,10 +401,14 @@ class _ChatHistoryPageState extends State<ChatHistoryPage> {
                             : () {
                                 chatProvider
                                     .setCurrentConversation(conversation.id);
-                                Navigator.pushReplacement(
+                                Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => const ChatPage(),
+                                    settings: RouteSettings(arguments: {
+                                      'from': 'history',
+                                      'sourceTabIndex': widget.sourceTabIndex,
+                                    }),
                                   ),
                                 );
                               },
@@ -418,10 +426,14 @@ class _ChatHistoryPageState extends State<ChatHistoryPage> {
             await chatProvider.createNewConversation(title: 'New Conversation');
             if (mounted) {
               debugPrint('Navigating to new conversation');
-              Navigator.pushReplacement(
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const ChatPage(),
+                  settings: RouteSettings(arguments: {
+                    'from': 'history',
+                    'sourceTabIndex': widget.sourceTabIndex,
+                  }),
                 ),
               );
             }
