@@ -16,9 +16,9 @@ class TtsService extends ChangeNotifier {
   late VoiceSelector _voiceSelector;
 
   TtsState _state = const TtsState();
-  Timer? _rateChangeDebouncer;
   List<dynamic>? _cachedLanguages;
   List<dynamic>? _cachedVoices;
+  Timer? _speechRateTimer;
 
   // Public getters
   bool get isTtsPlaying => _state.isTtsPlaying;
@@ -34,8 +34,7 @@ class TtsService extends ChangeNotifier {
   // Initialize all necessary components
   void _initComponents() {
     flutterTts = FlutterTts();
-    _engineManager =
-        TtsEngineManager(); // Kompatibel dengan constructor tanpa parameter
+    _engineManager = TtsEngineManager();
     _languageDetector = LanguageDetector();
     _textPreprocessor = TextPreprocessor();
     _voiceSelector = VoiceSelector();
@@ -61,6 +60,7 @@ class TtsService extends ChangeNotifier {
             isTtsInitializing: false,
             currentTtsText: null,
           );
+          debugPrint('TTS completed');
         },
         onCancel: () {
           _updateState(
@@ -110,17 +110,23 @@ class TtsService extends ChangeNotifier {
     }
   }
 
-  // Update the speech rate preview
-  void updateSpeechRatePreview(double rate) {
-    _updateState(speechRate: rate.clamp(0.0, 1.0));
-  }
+  // Set the speech rate with optimized debouncing
+  Future<void> setSpeechRate(double rate, {BuildContext? context}) async {
+    // Immediately update the UI state
+    double clampedRate = rate.clamp(0.0, 1.0);
+    if (_state.speechRate == clampedRate) {
+      debugPrint('Speech rate unchanged: $clampedRate, skipping update');
+      return;
+    }
 
-  // Set the speech rate with debouncing
-  void setSpeechRate(double rate, {BuildContext? context}) {
-    _rateChangeDebouncer?.cancel();
-    _updateState(speechRate: rate.clamp(0.0, 1.0));
+    // Update the displayed rate value without debounce for smooth UI
+    _updateState(speechRate: clampedRate);
 
-    _rateChangeDebouncer = Timer(const Duration(milliseconds: 300), () {
+    // Cancel any pending timer to prevent multiple rapid updates
+    _speechRateTimer?.cancel();
+
+    // Only debounce the actual TTS engine update
+    _speechRateTimer = Timer(const Duration(milliseconds: 300), () {
       _applySpeechRate(context);
     });
   }
@@ -132,25 +138,34 @@ class TtsService extends ChangeNotifier {
       return;
     }
 
+    debugPrint(
+        'Before _applySpeechRate: isTtsPlaying=${_state.isTtsPlaying}, speechRate=${_state.speechRate}');
     _updateState(isSettingSpeechRate: true);
+    bool wasPlaying = _state.isTtsPlaying;
+    String? textToResume = _state.currentTtsText;
 
     try {
-      await _engineManager.setSpeechRate(_state.speechRate);
-
-      if (_state.isTtsPlaying && _state.currentTtsText != null) {
-        String textToSpeak = _state.currentTtsText!;
-
+      // Stop TTS if playing
+      if (wasPlaying || _state.isTtsPlaying) {
+        debugPrint('Stopping TTS before changing speech rate');
         await _engineManager.stop();
         await Future.delayed(const Duration(milliseconds: 100));
-        await _engineManager.speak(textToSpeak);
-
-        _updateState(isTtsPlaying: true);
-        debugPrint(
-            'Successfully restarted TTS with new speech rate: ${_state.speechRate}');
+        _updateState(isTtsPlaying: false);
       }
-    } catch (e) {
-      debugPrint('Error in setSpeechRate: $e');
-      if (context != null) {
+
+      // Set new rate
+      debugPrint('Setting speech rate to: ${_state.speechRate}');
+      await _engineManager.setSpeechRate(_state.speechRate);
+
+      // Resume playback if it was playing before
+      if (wasPlaying && textToResume != null) {
+        debugPrint('Resuming TTS with new speech rate: ${_state.speechRate}');
+        await _engineManager.speak(textToResume);
+        _updateState(isTtsPlaying: true);
+      }
+    } catch (e, stackTrace) {
+      debugPrint('Error in _applySpeechRate: $e\n$stackTrace');
+      if (context != null && context.mounted) {
         CustomSnackBar.show(
           context,
           message: 'Error changing speech rate: $e',
@@ -159,10 +174,12 @@ class TtsService extends ChangeNotifier {
       }
       _updateState(
         isTtsPlaying: false,
-        currentTtsText: null,
+        currentTtsText: wasPlaying ? textToResume : null,
       );
     } finally {
       _updateState(isSettingSpeechRate: false);
+      debugPrint(
+          'After _applySpeechRate: isTtsPlaying=${_state.isTtsPlaying}, speechRate=${_state.speechRate}');
     }
   }
 
@@ -241,8 +258,7 @@ class TtsService extends ChangeNotifier {
 
       if (speakSuccess) {
         _updateState(isTtsPlaying: true);
-        debugPrint(
-            'Successfully started TTS playback, isTtsPlaying: ${_state.isTtsPlaying}');
+        debugPrint('Successfully started TTS playback');
       } else {
         debugPrint('Failed to start TTS after multiple attempts');
         CustomSnackBar.show(
@@ -273,18 +289,16 @@ class TtsService extends ChangeNotifier {
 
   // Stop the TTS playback
   Future<void> stopTts() async {
-    debugPrint(
-        'Attempting to stop TTS, current isTtsPlaying: ${_state.isTtsPlaying}');
+    debugPrint('Attempting to stop TTS, isTtsPlaying: ${_state.isTtsPlaying}');
     try {
       await _engineManager.stop();
-      await Future.delayed(const Duration(milliseconds: 50)); // Small delay
+      await Future.delayed(const Duration(milliseconds: 50));
       _updateState(
         isTtsPlaying: false,
         currentTtsText: null,
         isTtsInitializing: false,
       );
-      debugPrint(
-          'TTS stopped successfully, isTtsPlaying: ${_state.isTtsPlaying}');
+      debugPrint('TTS stopped successfully');
     } catch (e) {
       debugPrint('Error stopping TTS: $e');
       _updateState(
@@ -311,6 +325,10 @@ class TtsService extends ChangeNotifier {
           'TTS isTtsPlaying changed: ${_state.isTtsPlaying} -> $isTtsPlaying');
       stateChanged = true;
     }
+    if (speechRate != null && _state.speechRate != speechRate) {
+      debugPrint('TTS speechRate changed: ${_state.speechRate} -> $speechRate');
+      stateChanged = true;
+    }
 
     _state = _state.copyWith(
       isTtsPlaying: isTtsPlaying,
@@ -325,15 +343,14 @@ class TtsService extends ChangeNotifier {
         isTtsInitializing != null ||
         isSettingSpeechRate != null) {
       notifyListeners();
-      debugPrint('TtsService notified listeners of state change');
     }
   }
 
   // Dispose of the TTS service
   @override
   void dispose() {
+    _speechRateTimer?.cancel();
     flutterTts.stop();
-    _rateChangeDebouncer?.cancel();
     debugPrint('TtsService disposed');
     super.dispose();
   }

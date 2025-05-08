@@ -6,7 +6,10 @@ void showDyslexiaInfoDialog(BuildContext context) {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: const Text('Reading Tips for Dyslexia'),
+        title: const Text(
+          'Reading Tips for Dyslexia',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Container(
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.5,
@@ -26,15 +29,15 @@ void showDyslexiaInfoDialog(BuildContext context) {
                     ),
                     SizedBox(height: 8),
                     Text(
-                        '• Try the OpenDyslexic font which is specially designed for readers with dyslexia'),
+                        '• Try the OpenDyslexic font which is specially designed for readers with dyslexia.'),
                     Text(
-                        '• Increase letter spacing to reduce crowding effects'),
+                        '• Increase letter spacing to reduce crowding effects.'),
                     Text(
-                        '• Add more space between words to make them distinct'),
+                        '• Add more space between words to make them distinct.'),
                     Text(
-                        '• Use colored backgrounds like pale yellow to reduce visual stress'),
+                        '• Use colored backgrounds like pale yellow to reduce visual stress.'),
                     Text(
-                        '• Adjust line spacing to help track from one line to the next'),
+                        '• Adjust line spacing to help track from one line to the next.'),
                     SizedBox(height: 16),
                     Text(
                       'Reading Strategies:',
@@ -42,10 +45,11 @@ void showDyslexiaInfoDialog(BuildContext context) {
                     ),
                     SizedBox(height: 8),
                     Text(
-                        '• Use a ruler or your finger to track along lines of text'),
-                    Text('• Take breaks when needed to prevent fatigue'),
-                    Text('• Read aloud to engage multiple senses'),
-                    Text('• Break longer text into smaller, manageable chunks'),
+                        '• Use a ruler or your finger to track along lines of text.'),
+                    Text('• Take breaks when needed to prevent fatigue.'),
+                    Text('• Read aloud to engage multiple senses.'),
+                    Text(
+                        '• Break longer text into smaller, manageable chunks.'),
                   ],
                 ),
               ),
@@ -62,7 +66,7 @@ void showDyslexiaInfoDialog(BuildContext context) {
               Navigator.of(context).pop();
               showTextCustomizationSettings(context);
             },
-            child: const Text('Customize Text Now'),
+            child: const Text('Customize Now'),
           ),
         ],
       );

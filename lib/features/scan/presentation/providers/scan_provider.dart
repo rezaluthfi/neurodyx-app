@@ -34,6 +34,7 @@ class ScanProvider extends ChangeNotifier {
   File? _selectedMedia;
   late ScanEntity _scanEntity;
   bool _isProcessing = false;
+  bool _isSpeechRateChanging = false;
 
   File? get selectedMedia => _selectedMedia;
   ScanEntity get scanEntity => _scanEntity;
@@ -41,19 +42,27 @@ class ScanProvider extends ChangeNotifier {
   bool get isTtsPlaying => ttsService.isTtsPlaying;
   bool get isTtsInitializing => ttsService.isTtsInitializing;
   double get speechRate => ttsService.speechRate;
-  bool get isSettingSpeechRate => ttsService.isSettingSpeechRate;
+  bool get isSettingSpeechRate =>
+      ttsService.isSettingSpeechRate || _isSpeechRateChanging;
 
-  void _onTtsServiceChanged() {
-    debugPrint(
-        'TtsService changed: playing=${ttsService.isTtsPlaying}, initializing=${ttsService.isTtsInitializing}');
-    if (!ttsService.isTtsPlaying && !ttsService.isTtsInitializing) {
-      debugPrint('TTS completed, notifying listeners to update UI');
-    }
-    // Safely notify listeners
+  // Allow direct access to update slider value for click operations
+  void updateSliderValueImmediately(double value) {
+    // This method can be called when slider is clicked directly on a value
+    _isSpeechRateChanging = true;
     _safeNotifyListeners();
   }
 
-  // Helper to safely notify listeners, avoiding UI freezes
+  void _onTtsServiceChanged() {
+    debugPrint(
+        'TtsService changed: playing=${ttsService.isTtsPlaying}, initializing=${ttsService.isTtsInitializing}, rate=${ttsService.speechRate}');
+
+    // Only notify if we're not in the middle of a speech rate change
+    // This prevents UI updates while dragging
+    if (!_isSpeechRateChanging) {
+      _safeNotifyListeners();
+    }
+  }
+
   void _safeNotifyListeners() {
     try {
       notifyListeners();
@@ -62,30 +71,54 @@ class ScanProvider extends ChangeNotifier {
     }
   }
 
-  // Method to request permissions for camera or gallery
   Future<bool> requestPermissions(
       BuildContext context, ImageSource source) async {
-    // Store a local variable for context to avoid issues if widget is disposed
     final currentContext = context;
+    Permission permission;
+    if (Platform.isAndroid) {
+      permission =
+          source == ImageSource.camera ? Permission.camera : Permission.storage;
+    } else if (Platform.isIOS) {
+      permission =
+          source == ImageSource.camera ? Permission.camera : Permission.photos;
+    } else {
+      permission =
+          source == ImageSource.camera ? Permission.camera : Permission.photos;
+    }
 
-    Permission permission =
-        source == ImageSource.camera ? Permission.camera : Permission.photos;
-
-    // Check current permission status
+    debugPrint('Checking permission for ${source.toString()}');
     PermissionStatus status = await permission.status;
-    debugPrint('Permission ${permission.toString()} status: $status');
+    debugPrint('Initial permission ${permission.toString()} status: $status');
+
+    if (Platform.isAndroid && source == ImageSource.gallery) {
+      if (await Permission.photos.status.isGranted) {
+        debugPrint('Android photos permission already granted');
+        return true;
+      }
+
+      try {
+        final photosStatus = await Permission.photos.request();
+        debugPrint('Android photos permission request result: $photosStatus');
+        if (photosStatus.isGranted) {
+          return true;
+        }
+      } catch (e) {
+        debugPrint('Error requesting Android photos permission: $e');
+      }
+    }
+
     if (status.isGranted) {
+      debugPrint('Permission ${permission.toString()} already granted');
       return true;
     }
 
-    // Request permission with error handling
     try {
+      debugPrint('Requesting permission: ${permission.toString()}');
       status = await permission.request();
       debugPrint('Permission ${permission.toString()} request result: $status');
     } catch (e, stackTrace) {
       debugPrint(
           'Error requesting permission ${permission.toString()}: $e\n$stackTrace');
-      // Check if context is still valid before using ScaffoldMessenger
       if (currentContext.mounted) {
         ScaffoldMessenger.of(currentContext).showSnackBar(
           SnackBar(
@@ -98,7 +131,6 @@ class ScanProvider extends ChangeNotifier {
       return false;
     }
 
-    // Handle denied or permanently denied cases
     if (status.isDenied || status.isPermanentlyDenied) {
       debugPrint(
           'Permission ${permission.toString()} ${status.isPermanentlyDenied ? "permanently denied" : "denied"}');
@@ -106,9 +138,12 @@ class ScanProvider extends ChangeNotifier {
         try {
           await showDialog(
             context: currentContext,
-            barrierDismissible: false, // Prevent dismissal by tapping outside
+            barrierDismissible: false,
             builder: (dialogContext) => AlertDialog(
-              title: const Text('Permission Required'),
+              title: const Text(
+                'Permission Required',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               content: Text(
                 'The ${source == ImageSource.camera ? "camera" : "gallery"} permission is required. Please enable it in settings.',
               ),
@@ -138,16 +173,12 @@ class ScanProvider extends ChangeNotifier {
   }
 
   Future<void> pickImage(BuildContext context, ImageSource source) async {
-    // Prevent concurrent operations
     if (_isProcessing) {
       debugPrint('Already processing, ignoring pickImage request');
       return;
     }
 
-    // Ensure a valid ScaffoldMessenger context
     final scaffoldMessenger = ScaffoldMessenger.of(context);
-
-    // Check and request permissions
     bool hasPermission = await requestPermissions(context, source);
     if (!hasPermission) {
       debugPrint('Permission denied for $source');
@@ -183,7 +214,6 @@ class ScanProvider extends ChangeNotifier {
       );
       if (pickedFile != null) {
         debugPrint('Image picked: ${pickedFile.path}');
-        // Validate file existence
         final file = File(pickedFile.path);
         if (await file.exists()) {
           debugPrint('File exists: ${pickedFile.path}');
@@ -295,20 +325,48 @@ class ScanProvider extends ChangeNotifier {
         _scanEntity.extractedText!.isNotEmpty) {
       await ttsService.readTextAloud(context, _scanEntity.extractedText!);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No text to read!'),
-          behavior: SnackBarBehavior.floating,
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ),
+      CustomSnackBar.show(
+        context,
+        message: 'No text to read!',
+        type: SnackBarType.error,
       );
     }
   }
 
-  void setSpeechRate(double rate, {BuildContext? context}) {
-    ttsService.setSpeechRate(rate, context: context);
-    _safeNotifyListeners();
+  // Method for UI slider to track local changes without committing to TTS
+  void setSpeechRateLocalTracking(bool isTracking) {
+    if (_isSpeechRateChanging != isTracking) {
+      _isSpeechRateChanging = isTracking;
+      _safeNotifyListeners();
+    }
+  }
+
+  // For final speech rate update when slider drag ends
+  Future<void> setSpeechRate(double rate, {BuildContext? context}) async {
+    try {
+      _isSpeechRateChanging = true;
+      _safeNotifyListeners();
+
+      debugPrint('Setting speech rate to: $rate');
+      await ttsService.setSpeechRate(rate, context: context);
+      debugPrint('Speech rate set successfully: $rate');
+
+      _isSpeechRateChanging = false;
+      _safeNotifyListeners();
+    } catch (e, stackTrace) {
+      debugPrint('Error in setSpeechRate: $e\n$stackTrace');
+      _isSpeechRateChanging = false;
+
+      if (context != null && context.mounted) {
+        CustomSnackBar.show(
+          context,
+          message: 'Failed to change speech rate: $e',
+          type: SnackBarType.error,
+        );
+      }
+
+      _safeNotifyListeners();
+    }
   }
 
   Future<void> saveText(BuildContext context) async {
@@ -319,7 +377,6 @@ class ScanProvider extends ChangeNotifier {
   void dispose() {
     stopTtsIfPlaying();
     ttsService.removeListener(_onTtsServiceChanged);
-    ttsService.dispose();
     super.dispose();
   }
 }
