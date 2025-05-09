@@ -11,6 +11,7 @@ import 'package:neurodyx/features/chat/presentation/pages/chat_page.dart';
 import 'package:neurodyx/features/chat/presentation/pages/chat_history_page.dart';
 import 'package:neurodyx/features/chat/presentation/providers/chat_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MainNavigator extends StatefulWidget {
   final int initialIndex;
@@ -29,6 +30,16 @@ class _MainNavigatorState extends State<MainNavigator>
   late int _selectedIndex;
   bool _isNavigating = false;
   late final List<Widget> _pages;
+
+  // Variables for FAB positioning
+  double _fabX = 0.0;
+  double _fabY = 0.0;
+  bool _fabPositionLoaded = false;
+  bool _useCustomPosition = false;
+
+  // Constants for FAB positioning
+  final double _fabSize = 56.0;
+  final double _fabMargin = 16.0;
 
   @override
   void initState() {
@@ -52,7 +63,46 @@ class _MainNavigatorState extends State<MainNavigator>
     // Initialize ChatProvider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<ChatProvider>(context, listen: false).initialize();
+      _loadFabPosition();
     });
+  }
+
+  // Load saved FAB position from SharedPreferences
+  Future<void> _loadFabPosition() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      setState(() {
+        // Check if custom position is saved
+        _useCustomPosition =
+            prefs.getBool('use_custom_chat_fab_position') ?? false;
+
+        if (_useCustomPosition) {
+          _fabX = prefs.getDouble('chat_fab_x') ?? 0.0;
+          _fabY = prefs.getDouble('chat_fab_y') ?? 0.0;
+        }
+        _fabPositionLoaded = true;
+      });
+      debugPrint(
+          'Loaded FAB position: ($_fabX, $_fabY), useCustom: $_useCustomPosition');
+    } catch (e) {
+      debugPrint('Error loading FAB position: $e');
+      setState(() {
+        _fabPositionLoaded = true;
+      });
+    }
+  }
+
+  // Save FAB position to SharedPreferences
+  Future<void> _saveFabPosition() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('use_custom_chat_fab_position', true);
+      await prefs.setDouble('chat_fab_x', _fabX);
+      await prefs.setDouble('chat_fab_y', _fabY);
+      debugPrint('Saved FAB position: ($_fabX, $_fabY)');
+    } catch (e) {
+      debugPrint('Error saving FAB position: $e');
+    }
   }
 
   @override
@@ -187,6 +237,7 @@ class _MainNavigatorState extends State<MainNavigator>
 
     final bottomPadding = MediaQuery.of(context).padding.bottom;
     const navBarHeight = 80.0;
+    final screenSize = MediaQuery.of(context).size;
 
     final bottomNavTheme = Theme.of(context).copyWith(
       splashColor: Colors.transparent,
@@ -219,35 +270,80 @@ class _MainNavigatorState extends State<MainNavigator>
                 ValueListenableBuilder<bool>(
                   valueListenable: scanProvider.hideNavBarNotifier,
                   builder: (context, hideNavBar, child) {
-                    final showChatFab = !hideNavBar || _selectedIndex != 1;
+                    // Show chat FAB only on HomePage and when nav bar is not hidden
+                    final showChatFab = _selectedIndex == 0 && !hideNavBar;
 
-                    if (!showChatFab) {
+                    if (!showChatFab || !_fabPositionLoaded) {
                       return const SizedBox.shrink();
                     }
 
-                    final fabBottomPosition =
-                        navBarHeight + bottomPadding + 20.0;
+                    // Default positioning (right bottom above nav bar)
+                    final fabBottomMargin = navBarHeight + bottomPadding + 20.0;
 
-                    return Positioned(
-                      bottom: fabBottomPosition,
-                      right: 24,
-                      child: HeroMode(
-                        enabled: false,
-                        child: FloatingActionButton(
-                          onPressed: _navigateToChatPage,
-                          backgroundColor: AppColors.white,
-                          elevation: 6,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(16)),
-                          ),
-                          child: SvgPicture.asset(
-                            AssetPath.iconGemini,
-                            width: 28,
-                            height: 28,
+                    if (_useCustomPosition) {
+                      // Use custom position if set
+                      return Positioned(
+                        left: 0,
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              left: _fabX - _fabSize / 2,
+                              top: _fabY - _fabSize / 2,
+                              child: _buildDraggableChatFab(
+                                  screenSize, navBarHeight, bottomPadding),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      // Use original fixed position from first code version
+                      return Positioned(
+                        bottom: fabBottomMargin,
+                        right: 24,
+                        child: HeroMode(
+                          enabled: false,
+                          child: GestureDetector(
+                            onPanUpdate: (details) {
+                              // Start using custom position when user drags
+                              final newX = screenSize.width -
+                                  24 -
+                                  _fabSize / 2 +
+                                  details.delta.dx;
+                              final newY = screenSize.height -
+                                  fabBottomMargin -
+                                  _fabSize / 2 +
+                                  details.delta.dy;
+
+                              setState(() {
+                                _useCustomPosition = true;
+                                _fabX = newX;
+                                _fabY = newY;
+                              });
+                            },
+                            onPanEnd: (details) {
+                              _saveFabPosition();
+                            },
+                            child: FloatingActionButton(
+                              onPressed: _navigateToChatPage,
+                              backgroundColor: AppColors.white,
+                              elevation: 6,
+                              shape: const RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(16)),
+                              ),
+                              child: SvgPicture.asset(
+                                AssetPath.iconGemini,
+                                width: 28,
+                                height: 28,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    );
+                      );
+                    }
                   },
                 ),
               ],
@@ -315,6 +411,56 @@ class _MainNavigatorState extends State<MainNavigator>
             extendBody: true,
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildDraggableChatFab(
+      Size screenSize, double navBarHeight, double bottomPadding) {
+    return GestureDetector(
+      onPanUpdate: (details) {
+        setState(() {
+          _fabX += details.delta.dx;
+          _fabY += details.delta.dy;
+
+          // Add bounds to prevent FAB from going off-screen
+          _fabX = _fabX.clamp(_fabSize / 2, screenSize.width - _fabSize / 2);
+
+          // Keep above navbar
+          final minY = _fabSize / 2 + MediaQuery.of(context).padding.top;
+          final maxY =
+              screenSize.height - (navBarHeight + bottomPadding) - _fabSize / 2;
+          _fabY = _fabY.clamp(minY, maxY);
+        });
+      },
+      onPanEnd: (details) {
+        _saveFabPosition();
+      },
+      child: HeroMode(
+        enabled: false,
+        child: Material(
+          elevation: 6,
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: _navigateToChatPage,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              width: _fabSize,
+              height: _fabSize,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: SvgPicture.asset(
+                  AssetPath.iconGemini,
+                  width: 28,
+                  height: 28,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
