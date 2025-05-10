@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../../data/repositories/auth_repository.dart';
 import '../../domain/entities/user_entity.dart';
 
@@ -23,8 +22,6 @@ class AuthProvider with ChangeNotifier {
   bool _isPostAuthAction = false;
   Timer? _emailVerificationTimer;
 
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-
   AuthStatus get status => _status;
   UserEntity? get user => _user;
   String get errorMessage => _errorMessage;
@@ -39,25 +36,60 @@ class AuthProvider with ChangeNotifier {
           user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated;
       notifyListeners();
 
-      // Start or stop email verification polling
       if (user != null && !user.isEmailVerified) {
         _startEmailVerificationPolling();
       } else {
         _stopEmailVerificationPolling();
       }
     });
+    checkAuthStatus();
   }
 
-  // Start polling to check email verification status
+  Future<void> checkAuthStatus() async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      final user = await _authRepository.currentUser;
+      if (user == null) {
+        _status = AuthStatus.unauthenticated;
+        _user = null;
+        _isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      if (await _authRepository.isTokenValid()) {
+        _status = AuthStatus.authenticated;
+        _user = user;
+      } else if (await _authRepository.isRefreshTokenValid()) {
+        await _authRepository.refreshAuthToken();
+        _status = AuthStatus.authenticated;
+        _user = user;
+      } else {
+        await _authRepository.signOut();
+        _status = AuthStatus.unauthenticated;
+        _user = null;
+      }
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _setAuthError('Failed to check auth status: $e');
+      _status = AuthStatus.error;
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   void _startEmailVerificationPolling() {
-    _stopEmailVerificationPolling(); // Ensure no duplicate timers
+    _stopEmailVerificationPolling();
     _emailVerificationTimer =
         Timer.periodic(Duration(seconds: 5), (timer) async {
       await _refreshUser();
     });
   }
 
-  // Stop polling
   void _stopEmailVerificationPolling() {
     _emailVerificationTimer?.cancel();
     _emailVerificationTimer = null;
@@ -127,30 +159,7 @@ class AuthProvider with ChangeNotifier {
   Future<bool> reauthenticateWithGoogle() async {
     try {
       print('Attempting Google reauthentication...');
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        _setAuthError('Google Sign-In was cancelled.');
-        print('Google Sign-In cancelled');
-        return false;
-      }
-
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-        accessToken: googleAuth.accessToken,
-      );
-
-      final user = _firebaseAuth.currentUser;
-      if (user == null) {
-        _setAuthError('User not found. Please sign in again.');
-        print('No user found for reauthentication');
-        return false;
-      }
-
-      await user.reauthenticateWithCredential(credential);
+      await _authRepository.reauthenticateWithGoogle();
       print('Google reauthentication successful');
       return true;
     } catch (e) {
@@ -273,7 +282,7 @@ class AuthProvider with ChangeNotifier {
     try {
       clearError();
       _setLoading(true);
-      final user = _firebaseAuth.currentUser;
+      final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         throw Exception('No user signed in');
       }
@@ -347,10 +356,10 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> _refreshUser() async {
-    final firebaseUser = _firebaseAuth.currentUser;
+    final firebaseUser = FirebaseAuth.instance.currentUser;
     if (firebaseUser != null) {
-      await firebaseUser.reload();
-      final updatedFirebaseUser = _firebaseAuth.currentUser;
+      //await firebaseUser.reload();
+      final updatedFirebaseUser = FirebaseAuth.instance.currentUser;
 
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
@@ -358,17 +367,30 @@ class AuthProvider with ChangeNotifier {
           .get();
 
       if (updatedFirebaseUser != null && userDoc.exists) {
+        // Mengambil username dari Firestore dengan logika default
+        String username = userDoc.data()?['username'];
+
+        // If username is null or empty, use the email prefix or 'User'
+        if (username == null || username.isEmpty) {
+          // Use the email prefix as username if available
+          // Otherwise, use 'User' as default username
+          username = updatedFirebaseUser.email != null &&
+                  updatedFirebaseUser.email!.isNotEmpty
+              ? updatedFirebaseUser.email!.split('@')[0]
+              : 'User';
+        }
+
         _user = UserEntity(
           uid: updatedFirebaseUser.uid,
           email: updatedFirebaseUser.email ?? '',
-          username: userDoc.data()?['username'] ?? '',
+          username: username, // Gunakan username yang sudah diperiksa
           isEmailVerified: updatedFirebaseUser.emailVerified,
           profilePictureUrl: userDoc.data()?['profilePictureUrl'] ??
-              'initial:${userDoc.data()?['username']?[0] ?? ''}',
+              'initial:${username[0]}', // Gunakan huruf pertama dari username yang sudah diperiksa
         );
         _status = AuthStatus.authenticated;
         print(
-            'User refreshed: ${_user?.email}, verified: ${_user?.isEmailVerified}');
+            'User refreshed: ${_user?.email}, verified: ${_user?.isEmailVerified}, username: ${_user?.username}');
         notifyListeners();
       }
     }

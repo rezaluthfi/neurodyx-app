@@ -14,11 +14,20 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   @override
+  void initState() {
+    super.initState();
+    // Trigger checkAuthStatus when the widget is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<AuthProvider>(context, listen: false).checkAuthStatus();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final authStatus = authProvider.status;
 
-    // Listen for auth status changes to handle post-deletion navigation
+    // Handle post-authentication actions (e.g., after logout or account deletion)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (authStatus == AuthStatus.unauthenticated &&
           authProvider.isPostAuthAction &&

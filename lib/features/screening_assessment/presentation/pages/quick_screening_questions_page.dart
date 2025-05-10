@@ -83,28 +83,28 @@ class _QuickScreeningQuestionsPageState
     // Sample questions (you can customize these based on the category)
     final List<String> questions = widget.category == 'kid'
         ? [
-            'Does your child have difficulty recognizing letters?',
-            'Does your child struggle with rhyming words?',
-            'Does your child often skip words while reading?',
-            'Does your child have trouble with spelling?',
-            'Does your child find it hard to follow instructions?',
-            'Does your child avoid reading activities?',
-            'Does your child read slowly or hesitantly?',
-            'Does your child have difficulty with handwriting?',
-            'Does your child confuse similar-looking letters (e.g., b and d)?',
-            'Does your child struggle to remember sequences (e.g., days of the week)?',
+            'Do you or your child struggle to read new words and often guess instead?',
+            'When reading aloud, do you or your child pause, repeat words, or make frequent mistakes?',
+            "Have you or your child ever mispronounced certain words in a unique way (e.g., 'amunul' for 'animal' or 'poothtaste' for 'toothpaste')?",
+            "Do you or your child find it hard to understand what you've just read?",
+            'Do you or your child avoid reading for fun?',
+            'Do you or your child often make spelling mistakes?',
+            'Is your or your child’s handwriting often messy or difficult to read?',
+            'Do you or your child struggle with using punctuation and capitalization correctly?',
+            'Do you or your child resist writing tasks, even simple ones?',
+            'Do you or your child get frustrated or upset when doing schoolwork?',
           ]
         : [
-            'Do you have difficulty recognizing words quickly?',
-            'Do you struggle with spelling common words?',
-            'Do you often skip words or lines while reading?',
-            'Do you find it hard to concentrate while reading?',
-            'Do you avoid reading or writing tasks?',
-            'Do you read slowly or need to reread often?',
-            'Do you have trouble organizing your thoughts in writing?',
-            'Do you confuse similar-looking letters or numbers?',
-            'Do you struggle with remembering sequences or instructions?',
-            'Do you find it hard to follow written directions?',
+            'Do you read slowly?',
+            'Did you have trouble learning how to read when you were in school?',
+            'Do you often have to read something two or three times before it makes sense?',
+            'Are you uncomfortable reading out loud?',
+            'Do you omit, transpose, or add letters when you are reading or writing?',
+            'Do you find you still have spelling mistakes in your writing even after Spell Check?',
+            'Do you find it difficult to pronounce uncommon multi-syllable words when you are reading?',
+            'Do you choose to read magazines or short articles rather than longer books and novels?',
+            'When you were in school, did you find it extremely difficult to learn a foreign language?',
+            'Do you avoid work projects or courses that require extensive reading?',
           ];
 
     return WillPopScope(

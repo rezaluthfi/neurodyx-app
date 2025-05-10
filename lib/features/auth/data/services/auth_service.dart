@@ -1,15 +1,19 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' as http;
 import '../../domain/entities/user_entity.dart';
 
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final String baseUrl = dotenv.env['BASE_URL_API'] ?? '';
 
   // Convert Firebase User to UserEntity
   UserEntity? _userFromFirebase(User? user, {String? username}) {
@@ -64,6 +68,53 @@ class AuthService {
     return await _userFromFirebaseWithUsername(user);
   }
 
+  // Authenticate with backend
+  Future<Map<String, dynamic>> authenticateWithBackend({
+    required String token,
+    required String authType,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'token': token,
+          'authType': authType,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception(
+            'Failed to authenticate with backend: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Backend authentication error: $e');
+    }
+  }
+
+  // Refresh token with backend
+  Future<Map<String, dynamic>> refreshToken(String refreshToken) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'refreshToken': refreshToken,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        throw Exception('Failed to refresh token: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Token refresh error: $e');
+    }
+  }
+
   // Sign in with email and password
   Future<UserEntity?> signInWithEmailAndPassword(
       String email, String password) async {
@@ -77,6 +128,7 @@ class AuthService {
       if (userEntity == null) {
         throw Exception('no-firestore-document');
       }
+
       return userEntity;
     } catch (e) {
       throw _handleException(e);
@@ -146,21 +198,34 @@ class AuthService {
   // Sign in with Google
   Future<UserEntity?> signInWithGoogle() async {
     try {
+      print('Starting Google Sign-In...');
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
+        print('Google Sign-In cancelled by user');
         throw Exception('google-sign-in-cancelled');
       }
+      print('Google user signed in: ${googleUser.email}');
 
+      print('Fetching Google authentication credentials...');
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+      print(
+          'Google auth credentials: idToken=${googleAuth.idToken != null}, accessToken=${googleAuth.accessToken != null}');
+      if (googleAuth.idToken == null || googleAuth.accessToken == null) {
+        print('Failed to obtain Google ID token or access token');
+        throw Exception('failed-to-obtain-google-tokens');
+      }
 
+      print('Creating Firebase credential...');
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
+      print('Signing in to Firebase with Google credential...');
       final userCredential =
           await _firebaseAuth.signInWithCredential(credential);
+      print('Firebase sign-in successful: ${userCredential.user?.email}');
 
       if (userCredential.user != null) {
         final userDoc = await _firestore
@@ -168,7 +233,7 @@ class AuthService {
             .doc(userCredential.user!.uid)
             .get();
         if (!userDoc.exists) {
-          // Use email prefix as default username
+          print('Creating new Firestore user document...');
           String baseUsername = userCredential.user!.email!.split('@')[0];
           final username = await _generateUniqueUsername(baseUsername);
           final profilePictureUrl = userCredential.user!.photoURL ??
@@ -182,12 +247,35 @@ class AuthService {
             'createdAt': FieldValue.serverTimestamp(),
             'profilePictureUrl': profilePictureUrl,
           });
+          print('Firestore user document created');
         }
       }
 
       return await _userFromFirebaseWithUsername(userCredential.user);
     } catch (e) {
+      print('Google Sign-In error: $e');
       throw _handleException(e);
+    }
+  }
+
+  Future<String?> getGoogleIdToken() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        print('Google Sign-In cancelled by user');
+        throw Exception('google-sign-in-cancelled');
+      }
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      if (googleAuth.idToken == null) {
+        print('Failed to obtain Google ID token');
+        throw Exception('failed-to-obtain-google-id-token');
+      }
+      print('Google ID token obtained: ${googleAuth.idToken}');
+      return googleAuth.idToken;
+    } catch (e) {
+      print('Error getting Google ID token: $e');
+      rethrow;
     }
   }
 
@@ -231,22 +319,18 @@ class AuthService {
         throw Exception('no-user-signed-in');
       }
 
-      // Reauthenticate user
       final credential = EmailAuthProvider.credential(
         email: user.email!,
         password: password,
       );
       await user.reauthenticateWithCredential(credential);
 
-      // Update email in Firebase Auth
       await user.updateEmail(newEmail);
 
-      // Update email in Firestore
       await _firestore.collection('users').doc(user.uid).update({
         'email': newEmail,
       });
 
-      // Reload user to ensure email is updated
       await user.reload();
     } catch (e) {
       throw _handleException(e);
@@ -297,7 +381,6 @@ class AuthService {
         throw Exception('no-user-signed-in');
       }
 
-      // Check if user is signed in with email/password and verify password
       bool isGoogleUser = user.providerData
           .any((provider) => provider.providerId == 'google.com');
       if (!isGoogleUser) {
@@ -311,13 +394,10 @@ class AuthService {
         await user.reauthenticateWithCredential(credential);
       }
 
-      // Delete Firestore document first
       await _firestore.collection('users').doc(user.uid).delete();
 
-      // Delete Firebase Authentication user
       await user.delete();
 
-      // Sign out from Google if applicable
       await _googleSignIn.signOut();
       if (_googleSignIn.currentUser != null) {
         await _googleSignIn.disconnect();

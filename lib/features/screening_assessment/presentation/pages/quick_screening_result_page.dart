@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart' hide BoxDecoration, BoxShadow;
 import 'package:flutter_inset_box_shadow/flutter_inset_box_shadow.dart';
 import 'package:neurodyx/core/constants/assets_path.dart';
+import 'package:neurodyx/features/screening_assessment/presentation/pages/dyslexia_assessment_page.dart';
 import '../../../../../core/constants/app_colors.dart';
-import 'smart_screening_page.dart';
 
 class ResultPage extends StatelessWidget {
   final int score;
@@ -84,7 +84,7 @@ class ResultPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 40),
-              // Tombol "Go to assessment" (hanya untuk Moderate dan High Risk)
+              // Button "Go to Assessment" only for Moderate and High Risk
               if (showGoToAssessmentButton)
                 Container(
                   width: double.infinity,
@@ -106,7 +106,7 @@ class ResultPage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const SmartScreeningPage(),
+                          builder: (context) => const DyslexiaAssessmentPage(),
                         ),
                       );
                     },

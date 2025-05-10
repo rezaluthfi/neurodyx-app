@@ -52,4 +52,12 @@ class AssetPath {
       'assets/images/get_to_know/img_get_to_know_steve.png';
   static const String leonardoPhoto =
       'assets/images/get_to_know/img_get_to_know_leonardo.png';
+
+  // Dummy images
+  static const String imgDummyVisual1 =
+      'assets/images/dummy/img_dummy_visual_1.png';
+  static const String imgDummyVisual2 =
+      'assets/images/dummy/img_dummy_visual_2.png';
+  static const String imgDummyKinesthetic1 =
+      'assets/images/dummy/img_dummy_kinesthetic_1.png';
 }

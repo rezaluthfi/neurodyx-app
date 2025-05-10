@@ -115,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
         // Delay navigation slightly to allow the snackbar to be visible
         await Future.delayed(const Duration(seconds: 1));
 
-        // Navigate to HomePage
+        // Navigate to MainNavigator
         if (mounted) {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (context) => const MainNavigator()),
@@ -155,7 +155,7 @@ class _LoginPageState extends State<LoginPage> {
       // Delay navigation slightly to allow the snackbar to be visible
       await Future.delayed(const Duration(seconds: 1));
 
-      // Navigate to HomePage
+      // Navigate to MainNavigator
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const MainNavigator()),
