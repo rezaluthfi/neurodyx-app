@@ -31,6 +31,10 @@ class AssetPath {
   static const String iconSensory3D = 'assets/icons/png/ic_sensory_3d.png';
   static const String iconFire3D = 'assets/icons/png/ic_fire_3d.png';
 
+  static const String iconCorrectAnswer =
+      'assets/icons/png/ic_correct_answer.png';
+  static const String iconWrongAnswer = 'assets/icons/png/ic_wrong_answer.png';
+
   // Onboarding images
   static const String onboarding1 =
       'assets/images/onboarding/img_onboarding_1.png';
@@ -52,6 +56,14 @@ class AssetPath {
       'assets/images/get_to_know/img_get_to_know_steve.png';
   static const String leonardoPhoto =
       'assets/images/get_to_know/img_get_to_know_leonardo.png';
+
+  // Therapy result images
+  static const String imgTherapyResult1 =
+      'assets/images/multisensory_therapy_plan_result/img_therapy_result_1.png';
+  static const String imgTherapyResult2 =
+      'assets/images/multisensory_therapy_plan_result/img_therapy_result_2.png';
+  static const String imgTherapyResult3 =
+      'assets/images/multisensory_therapy_plan_result/img_therapy_result_3.png';
 
   // Dummy images
   static const String imgDummyVisual1 =

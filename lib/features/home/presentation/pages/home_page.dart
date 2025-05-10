@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neurodyx/features/get_to_know/presentation/pages/get_to_know_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/multisensory_therapy_plan_page.dart';
 import 'package:neurodyx/features/screening_assessment/presentation/pages/smart_screening_page.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
@@ -120,7 +121,13 @@ class _HomePageState extends State<HomePage> {
                   backgroundColor: AppColors.blue50,
                   iconPath: AssetPath.iconSensory3D,
                   onTap: () {
-                    // Add navigation or logic for "Start"
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const MultisensoryTherapyPlanPage(),
+                      ),
+                    );
                   },
                 ),
 

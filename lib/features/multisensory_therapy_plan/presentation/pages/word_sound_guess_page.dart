@@ -1,34 +1,22 @@
 import 'package:flutter/material.dart' hide BoxShadow, BoxDecoration;
 import 'package:flutter_inset_box_shadow/flutter_inset_box_shadow.dart';
-import '../../../../../core/constants/app_colors.dart';
+import 'package:neurodyx/core/constants/app_colors.dart';
+import 'package:neurodyx/core/constants/assets_path.dart';
+import 'therapy_results_page.dart';
 
-class AuditoryAssessmentQuestionsPage extends StatefulWidget {
-  const AuditoryAssessmentQuestionsPage({super.key});
+class WordSoundGuessPage extends StatefulWidget {
+  const WordSoundGuessPage({super.key});
 
   @override
-  _AuditoryAssessmentQuestionsPageState createState() =>
-      _AuditoryAssessmentQuestionsPageState();
+  _WordSoundGuessPageState createState() => _WordSoundGuessPageState();
 }
 
-class _AuditoryAssessmentQuestionsPageState
-    extends State<AuditoryAssessmentQuestionsPage> {
+class _WordSoundGuessPageState extends State<WordSoundGuessPage> {
   int currentQuestionIndex = 0;
   int score = 0;
-  String? selectedAnswer; // Track the selected answer for the current question
+  String? selectedAnswer;
 
   final List<Map<String, dynamic>> questions = [
-    // Letter Sound Guess
-    {
-      'type': 'letter_sound_guess',
-      'title': 'Letter Sound Guess',
-      'instruction':
-          'Listen to the sound of the letters and choose the appropriate letter!',
-      'sound': 'A', // Placeholder for the sound (e.g., letter "A")
-      'options': ['b', 'p', 'd'],
-      'correctAnswer': 'p',
-    },
-
-    // Word Sound Guess
     {
       'type': 'word_sound_guess',
       'title': 'Word Sound Guess',
@@ -38,68 +26,147 @@ class _AuditoryAssessmentQuestionsPageState
       'options': ['bat', 'cat', 'cap'],
       'correctAnswer': 'cat',
     },
-
-    // Word Repetition
-    {
-      'type': 'word_repetition',
-      'title': 'Word Repetition',
-      'instruction': 'Listen and repeat the words you hear!',
-      'sound': 'top top', // Placeholder for the sound (e.g., "top top")
-      'options': ['top'], // Single option for speech input
-      'correctAnswer': 'top',
-    },
   ];
 
-  int get totalQuestions => questions.length; // Total 9 questions
+  int get totalQuestions => questions.length;
 
   void selectAnswer(String answer) {
     setState(() {
-      selectedAnswer = answer; // Store the selected answer
+      selectedAnswer = answer;
     });
+  }
+
+  Future<void> showAnswerFeedbackDialog({
+    required BuildContext context,
+    required bool isCorrect,
+    required String correctAnswer,
+    required VoidCallback onProceed,
+  }) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        Future.delayed(const Duration(seconds: 2), () {
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+            onProceed();
+          }
+        });
+
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isCorrect ? 'Correct!' : 'Incorrect!',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: isCorrect ? Colors.green : Colors.red,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Image.asset(
+                  isCorrect
+                      ? AssetPath.iconCorrectAnswer
+                      : AssetPath.iconWrongAnswer,
+                  height: 80,
+                  width: 80,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(
+                      isCorrect ? Icons.check_circle : Icons.cancel,
+                      size: 80,
+                      color: isCorrect ? Colors.green : Colors.red,
+                    );
+                  },
+                ),
+                const SizedBox(height: 16),
+                if (!isCorrect && currentQuestionIndex < totalQuestions - 1)
+                  const Text(
+                    'That’s okay! Try the next one!',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  )
+                else
+                  const Text(
+                    "You're doing great!",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: AppColors.textPrimary,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void proceedToNextQuestion() {
-    if (selectedAnswer == null)
-      return; // Prevent proceeding if no answer is selected
+    if (selectedAnswer == null) return;
 
-    // Update score if the selected answer is correct
-    if (selectedAnswer == questions[currentQuestionIndex]['correctAnswer']) {
+    bool isCorrect =
+        selectedAnswer == questions[currentQuestionIndex]['correctAnswer'];
+    if (isCorrect) {
       score++;
     }
 
-    setState(() {
-      if (currentQuestionIndex < totalQuestions - 1) {
-        currentQuestionIndex++;
-        selectedAnswer =
-            null; // Reset the selected answer for the next question
-      } else {
-        // Pop twice to return to DyslexiaAssessmentPage
-        Navigator.pop(context, score); // Pop AuditoryAssessmentQuestionsPage
-        Navigator.pop(context, score); // Pop AssessmentReadyPage
-      }
-    });
+    void nextAction() {
+      setState(() {
+        if (currentQuestionIndex < totalQuestions - 1) {
+          currentQuestionIndex++;
+          selectedAnswer = null;
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TherapyResultsPage(
+                therapyType: 'Auditory',
+                score: score,
+                totalQuestions: totalQuestions,
+              ),
+            ),
+          );
+        }
+      });
+    }
+
+    showAnswerFeedbackDialog(
+      context: context,
+      isCorrect: isCorrect,
+      correctAnswer: questions[currentQuestionIndex]['correctAnswer'],
+      onProceed: nextAction,
+    );
   }
 
   void playSound(String sound) {
-    // Placeholder for sound playback logic
-    // In a real app, use a package like audioplayers to play the sound
     print('Playing sound: $sound');
   }
 
   @override
   Widget build(BuildContext context) {
     final currentQuestion = questions[currentQuestionIndex];
-    final questionType = currentQuestion['type'];
     final isLastQuestion = currentQuestionIndex == totalQuestions - 1;
 
     return WillPopScope(
-      onWillPop: () async => false, // Prevent back navigation
+      onWillPop: () async => false,
       child: Scaffold(
         backgroundColor: AppColors.offWhite,
         appBar: AppBar(
           backgroundColor: AppColors.offWhite,
           elevation: 0,
-          automaticallyImplyLeading: false, // Remove default back button
+          automaticallyImplyLeading: false,
           title: Text(
             currentQuestion['title'],
             style: const TextStyle(
@@ -116,7 +183,6 @@ class _AuditoryAssessmentQuestionsPageState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Progress Indicator
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -145,8 +211,6 @@ class _AuditoryAssessmentQuestionsPageState
                     minHeight: 8,
                   ),
                   const SizedBox(height: 24),
-
-                  // Instruction
                   Text(
                     'instruction :',
                     style: TextStyle(
@@ -163,8 +227,6 @@ class _AuditoryAssessmentQuestionsPageState
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Sound Playback Buttons
                   Center(
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -182,7 +244,6 @@ class _AuditoryAssessmentQuestionsPageState
                         const SizedBox(width: 16),
                         ElevatedButton(
                           onPressed: () {
-                            // Placeholder for mute functionality
                             print('Mute sound');
                           },
                           style: ElevatedButton.styleFrom(
@@ -197,15 +258,12 @@ class _AuditoryAssessmentQuestionsPageState
                     ),
                   ),
                   const SizedBox(height: 32),
-
-                  // Options
-                  if (questionType == 'letter_sound_guess')
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: (currentQuestion['options'] as List<String>)
-                          .map((option) => SizedBox(
-                                width: 80,
-                                height: 50,
+                  Column(
+                    children: (currentQuestion['options'] as List<String>)
+                        .map((option) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: SizedBox(
+                                width: double.infinity,
                                 child: ElevatedButton(
                                   onPressed: () => selectAnswer(option),
                                   style: ElevatedButton.styleFrom(
@@ -213,6 +271,8 @@ class _AuditoryAssessmentQuestionsPageState
                                         ? AppColors.greenMint.withOpacity(0.8)
                                         : AppColors.greenMint,
                                     foregroundColor: AppColors.textPrimary,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       side: BorderSide(
@@ -231,93 +291,11 @@ class _AuditoryAssessmentQuestionsPageState
                                     ),
                                   ),
                                 ),
-                              ))
-                          .toList(),
-                    )
-                  else if (questionType == 'word_sound_guess')
-                    Column(
-                      children: (currentQuestion['options'] as List<String>)
-                          .map((option) => Padding(
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 8),
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () => selectAnswer(option),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: selectedAnswer == option
-                                          ? AppColors.greenMint.withOpacity(0.8)
-                                          : AppColors.greenMint,
-                                      foregroundColor: AppColors.textPrimary,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 12),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        side: BorderSide(
-                                          color: selectedAnswer == option
-                                              ? AppColors.primary
-                                              : AppColors.greenMint,
-                                          width: 2,
-                                        ),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      option,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                    )
-                  else if (questionType == 'word_repetition')
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'press to speech',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Center(
-                          child: SizedBox(
-                            width: 80,
-                            height: 80,
-                            child: ElevatedButton(
-                              onPressed: () =>
-                                  selectAnswer(currentQuestion['options'][0]),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: selectedAnswer ==
-                                        currentQuestion['options'][0]
-                                    ? AppColors.greenMint.withOpacity(0.8)
-                                    : AppColors.greenMint,
-                                foregroundColor: AppColors.textPrimary,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(
-                                    color: selectedAnswer ==
-                                            currentQuestion['options'][0]
-                                        ? AppColors.primary
-                                        : AppColors.greenMint,
-                                    width: 2,
-                                  ),
-                                ),
                               ),
-                              child: const Icon(Icons.mic, size: 36),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                            ))
+                        .toList(),
+                  ),
                   const SizedBox(height: 16),
-
-                  // Next Button
                   Container(
                     width: double.infinity,
                     height: 56,
