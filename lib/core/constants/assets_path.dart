@@ -20,6 +20,11 @@ class AssetPath {
   static const String iconCustomize = 'assets/icons/png/ic_customize.png';
   static const String iconSend = 'assets/icons/png/ic_send.png';
 
+  static const String iconLowRisk = 'assets/icons/png/ic_low_risk.png';
+  static const String iconModerateRisk =
+      'assets/icons/png/ic_moderate_risk.png';
+  static const String iconHighRisk = 'assets/icons/png/ic_high_risk.png';
+
   static const String iconSearch3D = 'assets/icons/png/ic_search_3d.png';
   static const String iconPaperboard3D =
       'assets/icons/png/ic_paperboard_3d.png';

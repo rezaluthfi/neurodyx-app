@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neurodyx/features/get_to_know/presentation/pages/get_to_know_page.dart';
+import 'package:neurodyx/features/screening_assessment/presentation/pages/smart_screening_page.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/assets_path.dart';
@@ -99,7 +100,12 @@ class _HomePageState extends State<HomePage> {
                   backgroundColor: AppColors.pink50,
                   iconPath: AssetPath.iconPaperboard3D,
                   onTap: () {
-                    // Add navigation or logic for "Check"
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SmartScreeningPage(),
+                      ),
+                    );
                   },
                 ),
 
