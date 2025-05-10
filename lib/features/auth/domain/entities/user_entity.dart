@@ -4,6 +4,7 @@ class UserEntity {
   final String? displayName;
   final String? username;
   final bool isEmailVerified;
+  final String? profilePictureUrl;
 
   UserEntity({
     required this.uid,
@@ -11,5 +12,6 @@ class UserEntity {
     this.displayName,
     this.username,
     this.isEmailVerified = false,
+    this.profilePictureUrl,
   });
 }

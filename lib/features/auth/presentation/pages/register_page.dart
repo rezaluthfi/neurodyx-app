@@ -35,18 +35,15 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void initState() {
     super.initState();
-    // Clear any existing errors when the page is first loaded
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<AuthProvider>(context, listen: false).clearError();
     });
 
-    // Add listeners to clear error when user starts typing
     _emailController.addListener(_clearErrorOnChange);
     _usernameController.addListener(_clearErrorOnChange);
     _passwordController.addListener(_clearErrorOnChange);
     _confirmPasswordController.addListener(_clearErrorOnChange);
 
-    // Listen for connectivity changes using ConnectivityService
     _connectivitySubscription =
         ConnectivityService().onConnectivityChanged.listen((result) {
       if (!mounted) return;
@@ -85,7 +82,6 @@ class _RegisterPageState extends State<RegisterPage> {
     _usernameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    // Cancel connectivity subscription
     _connectivitySubscription?.cancel();
     super.dispose();
   }
@@ -104,7 +100,6 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
-      // Check internet connection using ConnectivityService
       bool isConnected =
           await ConnectivityService().checkInternetConnection(context);
       if (!isConnected) return;
@@ -117,22 +112,18 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       if (success && mounted) {
-        // Show success message using CustomSnackBar
         CustomSnackBar.show(
           context,
           message: 'Registration successful! Please verify your email.',
           type: SnackBarType.success,
         );
 
-        // Delay navigation slightly to allow the snackbar to be visible
         await Future.delayed(const Duration(seconds: 1));
 
-        // Go back to login page
         if (mounted) {
           Navigator.of(context).pop();
         }
       } else if (authProvider.errorMessage.isNotEmpty && mounted) {
-        // Show error message using CustomSnackBar
         CustomSnackBar.show(
           context,
           message: authProvider.errorMessage,
@@ -144,7 +135,6 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> _registerWithGoogle() async {
-    // Check internet connection using ConnectivityService
     bool isConnected =
         await ConnectivityService().checkInternetConnection(context);
     if (!isConnected) return;
@@ -153,17 +143,14 @@ class _RegisterPageState extends State<RegisterPage> {
     final success = await authProvider.signInWithGoogle();
 
     if (success && mounted) {
-      // Show success message using CustomSnackBar
       CustomSnackBar.show(
         context,
         message: 'Registration with Google successful!',
         type: SnackBarType.success,
       );
 
-      // Delay navigation slightly to allow the snackbar to be visible
       await Future.delayed(const Duration(seconds: 1));
 
-      // Navigate to HomePage
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const MainNavigator()),
@@ -171,7 +158,6 @@ class _RegisterPageState extends State<RegisterPage> {
         );
       }
     } else if (authProvider.errorMessage.isNotEmpty && mounted) {
-      // Show error message using CustomSnackBar
       CustomSnackBar.show(
         context,
         message: authProvider.errorMessage,
@@ -197,7 +183,6 @@ class _RegisterPageState extends State<RegisterPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 40),
-                  // Logo
                   Center(
                     child: SizedBox(
                       height: 80,
@@ -209,8 +194,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Title
                   const Center(
                     child: Text(
                       'Sign Up',
@@ -221,10 +204,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 40),
-
-                  // Username input
                   CustomTextField(
                     label: 'Username',
                     hintText: 'Enter your username',
@@ -240,7 +220,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       if (value.contains(' ')) {
                         return 'Username cannot contain spaces';
                       }
-                      // Regular expression to check if username contains only letters, numbers, dots, and underscores
                       final validCharacters = RegExp(r'^[a-zA-Z0-9._]+$');
                       if (!validCharacters.hasMatch(value)) {
                         return 'Username can only contain letters, numbers, dots, and underscores';
@@ -248,10 +227,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       return null;
                     },
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Email input
                   CustomTextField(
                     label: 'Email',
                     hintText: 'Enter your email',
@@ -267,10 +243,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       return null;
                     },
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Password input
                   CustomTextField(
                     label: 'Password',
                     hintText: 'Enter password',
@@ -288,10 +261,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       return null;
                     },
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Confirm Password input
                   CustomTextField(
                     label: 'Confirm Password',
                     hintText: 'Confirm password',
@@ -309,10 +279,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       return null;
                     },
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Register button
                   Container(
                     width: double.infinity,
                     height: 56,
@@ -356,10 +323,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             ),
                     ),
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Login link
                   Center(
                     child: TextButton(
                       onPressed: () {
@@ -406,10 +370,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Divider "OR"
                   Row(
                     children: [
                       Expanded(
@@ -437,10 +398,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 24),
-
-                  // Register with Google Button
                   Container(
                     width: double.infinity,
                     height: 56,
@@ -481,7 +439,6 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 24),
                 ],
               ),

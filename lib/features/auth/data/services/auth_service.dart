@@ -1,8 +1,10 @@
+import 'dart:async';
+import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../../domain/entities/user_entity.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -18,21 +20,26 @@ class AuthService {
       displayName: user.displayName,
       username: username,
       isEmailVerified: user.emailVerified,
+      profilePictureUrl: user.photoURL ?? _generateProfilePictureUrl(username),
     );
   }
 
-  // Stream for auth state changes
-  Stream<UserEntity?> get authStateChanges =>
-      _firebaseAuth.authStateChanges().asyncMap(_userFromFirebaseWithUsername);
+  // Generate default profile picture placeholder
+  String _generateProfilePictureUrl(String? username) {
+    if (username == null || username.isEmpty) return 'initial:?';
+    return 'initial:${username[0].toUpperCase()}';
+  }
 
-  // Get user with username from Firestore
+  // Get user with username and profile picture from Firestore
   Future<UserEntity?> _userFromFirebaseWithUsername(User? user) async {
     if (user == null) return null;
     try {
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      final userData = userDoc.data();
-      final username =
-          userData != null ? userData['username'] as String? : null;
+      final username = userDoc.data()?['username'] as String?;
+      final profilePictureUrl =
+          userDoc.data()?['profilePictureUrl'] as String? ??
+              user.photoURL ??
+              _generateProfilePictureUrl(username);
 
       return UserEntity(
         uid: user.uid,
@@ -40,11 +47,16 @@ class AuthService {
         displayName: user.displayName,
         username: username,
         isEmailVerified: user.emailVerified,
+        profilePictureUrl: profilePictureUrl,
       );
     } catch (e) {
       return _userFromFirebase(user);
     }
   }
+
+  // Stream for auth state changes
+  Stream<UserEntity?> get authStateChanges =>
+      _firebaseAuth.authStateChanges().asyncMap(_userFromFirebaseWithUsername);
 
   // Get the current user
   Future<UserEntity?> get currentUser async {
@@ -60,13 +72,18 @@ class AuthService {
         email: email,
         password: password,
       );
-      return await _userFromFirebaseWithUsername(userCredential.user);
+      final userEntity =
+          await _userFromFirebaseWithUsername(userCredential.user);
+      if (userEntity == null) {
+        throw Exception('no-firestore-document');
+      }
+      return userEntity;
     } catch (e) {
       throw _handleException(e);
     }
   }
 
-  // Register with email and password and username
+  // Register with email, password, and username
   Future<UserEntity?> registerWithEmailAndPassword(
       String email, String password, String username) async {
     try {
@@ -74,7 +91,6 @@ class AuthService {
           .collection('users')
           .where('username', isEqualTo: username)
           .get();
-
       if (usernameQuery.docs.isNotEmpty) {
         throw Exception('username-already-in-use');
       }
@@ -85,16 +101,45 @@ class AuthService {
       );
 
       if (userCredential.user != null) {
+        final profilePictureUrl = _generateProfilePictureUrl(username);
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'username': username,
           'email': email,
           'createdAt': FieldValue.serverTimestamp(),
+          'profilePictureUrl': profilePictureUrl,
         });
       }
 
       return _userFromFirebase(userCredential.user, username: username);
     } catch (e) {
       throw _handleException(e);
+    }
+  }
+
+  // Generate unique username
+  Future<String> _generateUniqueUsername(String baseUsername) async {
+    String username = baseUsername
+        .replaceAll(' ', '_')
+        .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '');
+    if (username.isEmpty) {
+      username = 'user_${Random().nextInt(10000)}';
+    }
+
+    int attempt = 0;
+    String candidate = username;
+    while (true) {
+      final usernameQuery = await _firestore
+          .collection('users')
+          .where('username', isEqualTo: candidate)
+          .get();
+      if (usernameQuery.docs.isEmpty) {
+        return candidate;
+      }
+      attempt++;
+      candidate = '$username${Random().nextInt(10000)}';
+      if (attempt > 5) {
+        throw Exception('failed-to-generate-unique-username');
+      }
     }
   }
 
@@ -117,21 +162,25 @@ class AuthService {
       final userCredential =
           await _firebaseAuth.signInWithCredential(credential);
 
-      // Check if the user already exists in Firestore
       if (userCredential.user != null) {
         final userDoc = await _firestore
             .collection('users')
             .doc(userCredential.user!.uid)
             .get();
-        // If the user does not exist, create a new document in Firestore
         if (!userDoc.exists) {
+          // Use email prefix as default username
+          String baseUsername = userCredential.user!.email!.split('@')[0];
+          final username = await _generateUniqueUsername(baseUsername);
+          final profilePictureUrl = userCredential.user!.photoURL ??
+              _generateProfilePictureUrl(username);
           await _firestore
               .collection('users')
               .doc(userCredential.user!.uid)
               .set({
-            'username': userCredential.user!.displayName ?? googleUser.email,
-            'email': userCredential.user!.email,
+            'username': username,
+            'email': userCredential.user!.email!,
             'createdAt': FieldValue.serverTimestamp(),
+            'profilePictureUrl': profilePictureUrl,
           });
         }
       }
@@ -142,14 +191,63 @@ class AuthService {
     }
   }
 
-  // Sign out
-  Future<void> signOut() async {
+  // Update profile picture placeholder
+  Future<void> updateProfilePicture(String uid, String username) async {
     try {
-      await _googleSignIn.signOut();
-      if (_googleSignIn.currentUser != null) {
-        await _googleSignIn.disconnect();
+      final profilePictureUrl = _generateProfilePictureUrl(username);
+      await _firestore.collection('users').doc(uid).update({
+        'profilePictureUrl': profilePictureUrl,
+      });
+    } catch (e) {
+      throw Exception('Failed to update profile picture: $e');
+    }
+  }
+
+  // Update username
+  Future<void> updateUsername(String uid, String newUsername) async {
+    try {
+      final usernameQuery = await _firestore
+          .collection('users')
+          .where('username', isEqualTo: newUsername)
+          .get();
+      if (usernameQuery.docs.isNotEmpty) {
+        throw Exception('username-already-in-use');
       }
-      await _firebaseAuth.signOut();
+
+      await _firestore.collection('users').doc(uid).update({
+        'username': newUsername,
+        'profilePictureUrl': _generateProfilePictureUrl(newUsername),
+      });
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
+  // Update email
+  Future<void> updateEmail(String newEmail, String password) async {
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('no-user-signed-in');
+      }
+
+      // Reauthenticate user
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+
+      // Update email in Firebase Auth
+      await user.updateEmail(newEmail);
+
+      // Update email in Firestore
+      await _firestore.collection('users').doc(user.uid).update({
+        'email': newEmail,
+      });
+
+      // Reload user to ensure email is updated
+      await user.reload();
     } catch (e) {
       throw _handleException(e);
     }
@@ -169,6 +267,19 @@ class AuthService {
     }
   }
 
+  // Sign out
+  Future<void> signOut() async {
+    try {
+      await _googleSignIn.signOut();
+      if (_googleSignIn.currentUser != null) {
+        await _googleSignIn.disconnect();
+      }
+      await _firebaseAuth.signOut();
+    } catch (e) {
+      throw _handleException(e);
+    }
+  }
+
   // Reset password
   Future<void> resetPassword(String email) async {
     try {
@@ -179,18 +290,37 @@ class AuthService {
   }
 
   // Delete user account and Firestore data
-  Future<void> deleteAccount() async {
+  Future<void> deleteAccount({String? password}) async {
     try {
       final user = _firebaseAuth.currentUser;
-      if (user != null) {
-        await _firestore.collection('users').doc(user.uid).delete();
-        await _googleSignIn.signOut();
-        if (_googleSignIn.currentUser != null) {
-          await _googleSignIn.disconnect();
-        }
-        await user.delete();
-      } else {
+      if (user == null) {
         throw Exception('no-user-signed-in');
+      }
+
+      // Check if user is signed in with email/password and verify password
+      bool isGoogleUser = user.providerData
+          .any((provider) => provider.providerId == 'google.com');
+      if (!isGoogleUser) {
+        if (password == null || password.isEmpty) {
+          throw Exception('password-required');
+        }
+        final credential = EmailAuthProvider.credential(
+          email: user.email!,
+          password: password,
+        );
+        await user.reauthenticateWithCredential(credential);
+      }
+
+      // Delete Firestore document first
+      await _firestore.collection('users').doc(user.uid).delete();
+
+      // Delete Firebase Authentication user
+      await user.delete();
+
+      // Sign out from Google if applicable
+      await _googleSignIn.signOut();
+      if (_googleSignIn.currentUser != null) {
+        await _googleSignIn.disconnect();
       }
     } catch (e) {
       throw _handleException(e);
@@ -216,12 +346,7 @@ class AuthService {
       bool isGoogleUser =
           providerData.any((provider) => provider.providerId == 'google.com');
 
-      print('User UID: ${user.uid}');
-      print('User Email: ${user.email}');
-      print('Providers: ${providerData.map((p) => p.providerId).toList()}');
-
       if (hasPasswordProvider) {
-        // User already has email/password, normal change
         final credential = EmailAuthProvider.credential(
           email: email,
           password: oldPassword,
@@ -229,45 +354,29 @@ class AuthService {
         await user.reauthenticateWithCredential(credential);
         await user.updatePassword(newPassword);
       } else if (isGoogleUser) {
-        // Google user, no email/password yet
-        try {
-          await reauthenticateWithGoogle(); // very important!
-        } catch (e) {
-          throw Exception('google-reauthentication-failed: $e');
-        }
-
+        await reauthenticateWithGoogle();
         final passwordCredential = EmailAuthProvider.credential(
           email: email,
           password: newPassword,
         );
-
         try {
-          print("Trying to link password credential to Google user...");
           await user.linkWithCredential(passwordCredential);
-          print("Link success, now user has email/password provider!");
         } on FirebaseAuthException catch (e) {
           if (e.code == 'provider-already-linked') {
-            // Already linked? Just update password
-            print("Provider already linked. Updating password instead.");
             await user.updatePassword(newPassword);
-          } else if (e.code == 'credential-already-in-use') {
-            throw Exception('email-already-has-password-account');
-          } else if (e.code == 'requires-recent-login') {
-            throw Exception('please-logout-and-login-again');
           } else {
-            throw Exception('link-password-failed: ${e.code}');
+            throw e;
           }
         }
       } else {
         throw Exception('no-supported-provider');
       }
     } catch (e) {
-      print('Error in changePassword: $e');
       throw _handleException(e);
     }
   }
 
-  // Method to reauthenticate Google user
+  // Reauthenticate with Google
   Future<void> reauthenticateWithGoogle() async {
     try {
       final user = _firebaseAuth.currentUser;
@@ -296,7 +405,6 @@ class AuthService {
 
       await user.reauthenticateWithCredential(credential);
     } catch (e) {
-      print('Error in reauthenticateWithGoogle: $e');
       throw Exception('reauthenticate-google-failed: $e');
     }
   }
@@ -309,36 +417,33 @@ class AuthService {
         return false;
       }
 
-      // Check provider data
       final providerData = user.providerData;
-
-      for (var provider in providerData) {
-        if (provider.providerId == 'google.com') {
-          return true;
-        }
-      }
-
-      return false;
+      return providerData
+          .any((provider) => provider.providerId == 'google.com');
     } catch (e) {
       throw _handleException(e);
     }
   }
 
+  // Reauthenticate with email and password
   Future<void> reauthenticateWithEmailPassword(String password) async {
-    final user = _firebaseAuth.currentUser;
-    if (user == null || user.email == null) {
-      throw Exception('No user logged in');
+    try {
+      final user = _firebaseAuth.currentUser;
+      if (user == null || user.email == null) {
+        throw Exception('no-user-signed-in');
+      }
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: password,
+      );
+      await user.reauthenticateWithCredential(credential);
+    } catch (e) {
+      throw _handleException(e);
     }
-    final credential = EmailAuthProvider.credential(
-      email: user.email!,
-      password: password,
-    );
-    await user.reauthenticateWithCredential(credential);
   }
 
   // Handle all exceptions with custom messages
   String _handleException(dynamic e) {
-    // Handle FirebaseAuthException
     if (e is FirebaseAuthException) {
       switch (e.code) {
         case 'user-not-found':
@@ -350,48 +455,53 @@ class AuthService {
         case 'invalid-email':
           return 'The email address is invalid.';
         case 'email-already-in-use':
-          return 'The email address is already in use.';
+          return 'This email address is already in use by another account.';
         case 'weak-password':
           return 'The password is too weak.';
         case 'operation-not-allowed':
-          return 'Account creation is not allowed.';
+          return 'This operation is not allowed. Please check Firebase Authentication settings or contact support.';
         case 'too-many-requests':
-          return 'Too many attempts. Try again later.';
+          return 'Too many attempts. Please try again later.';
         case 'requires-recent-login':
           return 'This operation requires a recent login. Please sign in again.';
         case 'account-exists-with-different-credential':
-          return 'This email is already registered with a different sign-in method. Please sign in with the original method.';
+          return 'This email is already registered with a different sign-in method.';
         case 'credential-already-in-use':
           return 'This email is already associated with another account.';
-        case 'channel-error':
-          return 'An error occurred during authentication. Please try logging out and logging in again.';
         case 'provider-already-linked':
           return 'This authentication provider is already linked to your account.';
-        case 'email-already-exists':
-          return 'The email address is already in use with a different account.';
+        case 'network-request-failed':
+          return 'Network error. Please check your internet connection and try again.';
         default:
           return 'An authentication error occurred: ${e.message ?? e.code}';
       }
     }
 
-    // Handle PlatformException (from google_sign_in)
+    if (e is FirebaseException) {
+      switch (e.code) {
+        case 'permission-denied':
+          return 'Permission denied. Please check Firestore security rules.';
+        case 'unavailable':
+          return 'Firestore service is unavailable. Please try again later.';
+        default:
+          return 'A Firestore error occurred: ${e.message ?? e.code}';
+      }
+    }
+
     if (e is PlatformException) {
       if (e.code == 'sign_in_failed' &&
           e.message?.contains('ApiException: 12500') == true) {
-        return 'Google Sign-In failed: Please check if Google Play Services is up to date, an account is added to the device, and the SHA-1 fingerprint is correctly configured in Firebase Console.';
-      }
-      if (e.code == 'status' &&
-          e.message?.contains('Failed to disconnect') == true) {
-        return 'Failed to disconnect Google Sign-In session. This does not affect the operation.';
+        return 'Google Sign-In failed: Please check Google Play Services.';
       }
       return 'Platform error occurred: ${e.message ?? e.code}';
     }
 
-    // Handle custom exceptions
+    if (e is TimeoutException) {
+      return 'Operation timed out. Please check your network and try again.';
+    }
+
     if (e.toString().contains('Exception:')) {
       String errorMessage = e.toString().replaceAll('Exception: ', '');
-
-      // Handle custom error cases
       switch (errorMessage) {
         case 'username-already-in-use':
           return 'This username is already taken. Please choose another one.';
@@ -399,37 +509,25 @@ class AuthService {
           return 'Google Sign-In was cancelled by the user.';
         case 'no-user-signed-in':
           return 'No user is currently signed in.';
+        case 'no-user-signed-in-after-reauth':
+          return 'User session lost after reauthentication. Please sign in again.';
         case 'no-user-or-email-verified':
           return 'No user is signed in or the email is already verified.';
-        case 'google-user-needs-reauthentication':
-          return 'You need to sign in again with Google before setting a password.';
         case 'no-email-associated':
           return 'No email is associated with this account.';
-        case 'google-auth-tokens-invalid':
-          return 'Google authentication tokens are invalid. Please try again.';
-        case 'email-already-has-password-account':
-          return 'This email is already associated with a password account. Please use that account to sign in.';
-        case 'please-logout-and-login-again':
-          return 'For security reasons, please sign out and sign in again before setting a password.';
-        case 'google-reauthentication-failed':
-          return 'Failed to re-authenticate with Google. Please try signing out and signing in again.';
         case 'no-supported-provider':
           return 'No supported authentication provider found for this account.';
+        case 'no-firestore-document':
+          return 'Account does not exist. Please register again.';
+        case 'password-required':
+          return 'Password is required for email/password account deletion.';
+        case 'failed-to-generate-unique-username':
+          return 'Failed to generate a unique username. Please try again.';
         default:
-          if (errorMessage.startsWith('password-update-failed:')) {
-            return 'Failed to update password: ${errorMessage.replaceAll('password-update-failed: ', '')}';
-          }
-          if (errorMessage.startsWith('unexpected-error:')) {
-            return 'An unexpected error occurred. Please try again later.';
-          }
-          if (errorMessage.startsWith('reauthenticate-google-failed:')) {
-            return 'Failed to re-authenticate with Google: ${errorMessage.replaceAll('reauthenticate-google-failed: ', '')}';
-          }
           return 'An error occurred: $errorMessage';
       }
     }
 
-    // Default case
     return 'An unexpected error occurred: $e';
   }
 }

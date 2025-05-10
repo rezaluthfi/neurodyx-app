@@ -68,7 +68,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
       final authProvider =
           Provider.of<local_auth.AuthProvider>(context, listen: false);
       final newPassword = _newPasswordController.text.trim();
-      final confirmPassword = _confirmPasswordController.text.trim();
+      // If the user is a Google user, we don't need to provide the old password
       final oldPassword =
           _isGoogleUser ? '' : _oldPasswordController.text.trim();
 

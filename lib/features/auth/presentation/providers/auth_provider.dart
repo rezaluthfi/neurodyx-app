@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -18,28 +20,49 @@ class AuthProvider with ChangeNotifier {
   UserEntity? _user;
   String _errorMessage = '';
   bool _isLoading = false;
+  bool _isPostAuthAction = false;
+  Timer? _emailVerificationTimer;
 
-  // FirebaseAuth instance
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 
-  // Getters
   AuthStatus get status => _status;
   UserEntity? get user => _user;
   String get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null;
+  bool get isPostAuthAction => _isPostAuthAction;
 
   AuthProvider() {
-    // Listen to auth state changes
     _authRepository.authStateChanges.listen((user) {
       _user = user;
       _status =
           user != null ? AuthStatus.authenticated : AuthStatus.unauthenticated;
       notifyListeners();
+
+      // Start or stop email verification polling
+      if (user != null && !user.isEmailVerified) {
+        _startEmailVerificationPolling();
+      } else {
+        _stopEmailVerificationPolling();
+      }
     });
   }
 
-  // Sign in
+  // Start polling to check email verification status
+  void _startEmailVerificationPolling() {
+    _stopEmailVerificationPolling(); // Ensure no duplicate timers
+    _emailVerificationTimer =
+        Timer.periodic(Duration(seconds: 5), (timer) async {
+      await _refreshUser();
+    });
+  }
+
+  // Stop polling
+  void _stopEmailVerificationPolling() {
+    _emailVerificationTimer?.cancel();
+    _emailVerificationTimer = null;
+  }
+
   Future<bool> signIn(String email, String password) async {
     try {
       clearError();
@@ -60,7 +83,6 @@ class AuthProvider with ChangeNotifier {
     try {
       final currentUser = await _authRepository.currentUser;
       if (currentUser != null) {
-        // Implementation to check if the user is from Google
         return await _authRepository.isUserFromGoogle();
       }
       return false;
@@ -70,7 +92,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Register
   Future<bool> register(String email, String password, String username) async {
     try {
       clearError();
@@ -87,7 +108,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Sign in with Google
   Future<bool> signInWithGoogle() async {
     try {
       clearError();
@@ -104,13 +124,14 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Reauthenticate with Google
   Future<bool> reauthenticateWithGoogle() async {
     try {
+      print('Attempting Google reauthentication...');
       final GoogleSignIn googleSignIn = GoogleSignIn();
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        // User canceled the sign-in
+        _setAuthError('Google Sign-In was cancelled.');
+        print('Google Sign-In cancelled');
         return false;
       }
 
@@ -125,34 +146,46 @@ class AuthProvider with ChangeNotifier {
       final user = _firebaseAuth.currentUser;
       if (user == null) {
         _setAuthError('User not found. Please sign in again.');
+        print('No user found for reauthentication');
         return false;
       }
 
       await user.reauthenticateWithCredential(credential);
+      print('Google reauthentication successful');
       return true;
     } catch (e) {
-      _setAuthError(e.toString());
+      _setAuthError('Google reauthentication failed: $e');
+      print('Google reauthentication error: $e');
       return false;
     }
   }
 
-  // Reauthenticate with email and password
   Future<bool> reauthenticateWithEmailPassword(String password) async {
     try {
+      print('Attempting email/password reauthentication...');
       await _authRepository.reauthenticateWithEmailPassword(password);
+      print('Email/password reauthentication successful');
       return true;
     } catch (e) {
-      _setAuthError(e.toString());
+      String errorMessage = e.toString();
+      if (errorMessage.contains('wrong-password')) {
+        errorMessage = 'The password you entered is incorrect.';
+      } else if (errorMessage.contains('operation-not-allowed')) {
+        errorMessage = 'Authentication is not enabled. Contact support.';
+      }
+      _setAuthError(errorMessage);
+      print('Email/password reauthentication error: $errorMessage');
       return false;
     }
   }
 
-  // Sign out
   Future<void> signOut() async {
+    _isPostAuthAction = true;
     await _authRepository.signOut();
+    _stopEmailVerificationPolling();
+    notifyListeners();
   }
 
-  // Reset password
   Future<bool> resetPassword(String email) async {
     try {
       clearError();
@@ -167,31 +200,47 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Delete account
-  Future<bool> deleteAccount() async {
+  Future<bool> deleteAccount({String? password}) async {
     try {
       clearError();
       _setLoading(true);
-      _status = AuthStatus.authenticating;
-      notifyListeners();
+      print('Starting account deletion...');
 
-      await _authRepository.deleteAccount();
-      await _authRepository.signOut(); // Sign out after deletion
+      await _authRepository.deleteAccount(password: password);
+      await _authRepository.signOut();
 
-      _user = null; // Set user to null after deletion
+      _user = null;
       _status = AuthStatus.unauthenticated;
+      _isPostAuthAction = true;
       _setLoading(false);
+      _stopEmailVerificationPolling();
+      print(
+          'Account deleted, status: $_status, isPostAuthAction: $_isPostAuthAction');
       notifyListeners();
 
       return true;
     } catch (e) {
-      _setAuthError(e.toString());
+      String errorMessage = e.toString();
+      if (errorMessage.contains('wrong-password')) {
+        errorMessage = 'The password you entered is incorrect.';
+      } else if (errorMessage.contains('no-user-signed-in')) {
+        errorMessage = 'No user is currently signed in.';
+      } else if (errorMessage.contains('no-supported-provider')) {
+        errorMessage = 'Account deletion is not supported for this provider.';
+      } else if (errorMessage.contains('password-required')) {
+        errorMessage =
+            'Password is required for email/password account deletion.';
+      } else if (errorMessage.contains('operation-not-allowed')) {
+        errorMessage = 'Account deletion is not allowed. Contact support.';
+      }
+      _setAuthError(errorMessage);
       _setLoading(false);
+      print('Error deleting account: $errorMessage');
+      notifyListeners();
       return false;
     }
   }
 
-  // Change password
   Future<bool> changePassword(String oldPassword, String newPassword) async {
     try {
       clearError();
@@ -199,16 +248,12 @@ class AuthProvider with ChangeNotifier {
       _status = AuthStatus.authenticating;
       notifyListeners();
 
-      // Check if the user is a Google user
       bool isGoogle = await isGoogleUser();
 
       if (isGoogle) {
-        // If the user is a Google user, we need to reauthenticate with Google
         await _authRepository.reauthenticateWithGoogle();
-        await _authRepository.changePassword(
-            '', newPassword); // Old password is not needed for Google users
+        await _authRepository.changePassword('', newPassword);
       } else {
-        // If the user is not a Google user, we can change the password directly
         if (oldPassword.isEmpty) {
           throw Exception('Current password is required');
         }
@@ -224,22 +269,148 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Set loading state
+  Future<bool> updateUsername(String newUsername) async {
+    try {
+      clearError();
+      _setLoading(true);
+      final user = _firebaseAuth.currentUser;
+      if (user == null) {
+        throw Exception('No user signed in');
+      }
+      await _authRepository.updateUsername(user.uid, newUsername);
+      await _refreshUser();
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      String errorMessage = e.toString();
+      if (errorMessage.contains('username-already-in-use')) {
+        _setAuthError('This username is already taken. Please choose another.');
+      } else {
+        _setAuthError(errorMessage);
+      }
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<bool> updateEmail(String newEmail, String password) async {
+    try {
+      clearError();
+      _setLoading(true);
+      print('AuthProvider: Starting email update to $newEmail');
+      await _authRepository.updateEmail(newEmail, password);
+      await _refreshUser();
+      _setLoading(false);
+      print('AuthProvider: Email update successful');
+      notifyListeners();
+      return true;
+    } catch (e) {
+      String errorMessage = e.toString();
+      print('AuthProvider: Email update failed with error: $errorMessage');
+      if (errorMessage.contains('wrong-password')) {
+        errorMessage = 'The password you entered is incorrect.';
+      } else if (errorMessage.contains('operation-not-allowed')) {
+        errorMessage =
+            'Email update is not allowed. Please check Firebase settings or contact support.';
+      } else if (errorMessage.contains('email-already-in-use')) {
+        errorMessage =
+            'This email address is already in use by another account.';
+      } else if (errorMessage.contains('invalid-email')) {
+        errorMessage = 'The email address is invalid.';
+      } else if (errorMessage.contains('network-request-failed')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      } else if (errorMessage.contains('permission-denied')) {
+        errorMessage = 'Permission denied. Please check Firestore settings.';
+      } else if (errorMessage.contains('no-user-signed-in-after-reauth')) {
+        errorMessage = 'User session lost. Please sign in again.';
+      }
+      _setAuthError(errorMessage);
+      _setLoading(false);
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> sendEmailVerification() async {
+    try {
+      clearError();
+      _setLoading(true);
+      await _authRepository.sendEmailVerification();
+      await _refreshUser();
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      _setAuthError(e.toString());
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<void> _refreshUser() async {
+    final firebaseUser = _firebaseAuth.currentUser;
+    if (firebaseUser != null) {
+      await firebaseUser.reload();
+      final updatedFirebaseUser = _firebaseAuth.currentUser;
+
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(firebaseUser.uid)
+          .get();
+
+      if (updatedFirebaseUser != null && userDoc.exists) {
+        _user = UserEntity(
+          uid: updatedFirebaseUser.uid,
+          email: updatedFirebaseUser.email ?? '',
+          username: userDoc.data()?['username'] ?? '',
+          isEmailVerified: updatedFirebaseUser.emailVerified,
+          profilePictureUrl: userDoc.data()?['profilePictureUrl'] ??
+              'initial:${userDoc.data()?['username']?[0] ?? ''}',
+        );
+        _status = AuthStatus.authenticated;
+        print(
+            'User refreshed: ${_user?.email}, verified: ${_user?.isEmailVerified}');
+        notifyListeners();
+      }
+    }
+  }
+
+  String? validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter a username';
+    }
+    if (value.length < 3) {
+      return 'Username must be at least 3 characters';
+    }
+    if (value.contains(' ')) {
+      return 'Username cannot contain spaces';
+    }
+    final validCharacters = RegExp(r'^[a-zA-Z0-9._]+$');
+    if (!validCharacters.hasMatch(value)) {
+      return 'Username can only contain letters, numbers, dots, and underscores';
+    }
+    return null;
+  }
+
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();
   }
 
-  // Set error message and status
   void _setAuthError(String message) {
     _errorMessage = message;
-    _status = AuthStatus.error;
+    _status = _user != null ? AuthStatus.authenticated : AuthStatus.error;
     notifyListeners();
   }
 
-  // Clear error message
   void clearError() {
     _errorMessage = '';
+    _isPostAuthAction = false;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _stopEmailVerificationPolling();
+    super.dispose();
   }
 }

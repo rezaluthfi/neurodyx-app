@@ -45,7 +45,11 @@ class AuthRepository {
   }
 
   Future<void> reauthenticateWithEmailPassword(String password) async {
-    await _authService.reauthenticateWithEmailPassword(password);
+    try {
+      await _authService.reauthenticateWithEmailPassword(password);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<bool> isUserFromGoogle() async {
@@ -57,20 +61,32 @@ class AuthRepository {
   }
 
   Future<void> signOut() async {
-    await _authService.signOut();
+    try {
+      await _authService.signOut();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> resetPassword(String email) async {
-    await _authService.resetPassword(email);
+    try {
+      await _authService.resetPassword(email);
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> sendEmailVerification() async {
-    await _authService.sendEmailVerification();
+    try {
+      await _authService.sendEmailVerification();
+    } catch (e) {
+      rethrow;
+    }
   }
 
-  Future<void> deleteAccount() async {
+  Future<void> deleteAccount({String? password}) async {
     try {
-      await _authService.deleteAccount();
+      await _authService.deleteAccount(password: password);
     } catch (e) {
       rethrow;
     }
@@ -79,6 +95,30 @@ class AuthRepository {
   Future<void> changePassword(String oldPassword, String newPassword) async {
     try {
       await _authService.changePassword(oldPassword, newPassword);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateUsername(String uid, String newUsername) async {
+    try {
+      await _authService.updateUsername(uid, newUsername);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateEmail(String newEmail, String password) async {
+    try {
+      await _authService.updateEmail(newEmail, password);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateProfilePicture(String uid, String username) async {
+    try {
+      await _authService.updateProfilePicture(uid, username);
     } catch (e) {
       rethrow;
     }

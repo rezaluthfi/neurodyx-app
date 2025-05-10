@@ -39,7 +39,6 @@ class _MainNavigatorState extends State<MainNavigator>
 
   // Constants for FAB positioning
   final double _fabSize = 56.0;
-  final double _fabMargin = 16.0;
 
   @override
   void initState() {

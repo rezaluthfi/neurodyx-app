@@ -97,6 +97,7 @@ class FinalOnboardingScreen extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
+                  textAlign: TextAlign.center,
                   'CREATE ACCOUNT',
                   style: TextStyle(
                     fontSize: 16,
@@ -126,6 +127,7 @@ class FinalOnboardingScreen extends StatelessWidget {
                   ),
                 ),
                 child: const Text(
+                  textAlign: TextAlign.center,
                   'I ALREADY HAVE AN ACCOUNT',
                   style: TextStyle(
                     color: Colors.white,

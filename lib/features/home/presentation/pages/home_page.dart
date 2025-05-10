@@ -30,7 +30,7 @@ class _HomePageState extends State<HomePage> {
     if (user == null) {
       debugPrint('HomePage: User is null!');
     } else {
-      debugPrint('HomePage: User email is ${user.email}');
+      debugPrint('HomePage: User username is ${user.username}');
     }
 
     return Scaffold(
@@ -44,7 +44,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 // Greeting Section
                 Text(
-                  'Hello, ${user?.email?.split('@')[0] ?? 'Guest'}!',
+                  'Hello, ${user?.username ?? 'Guest'}!',
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 16,
