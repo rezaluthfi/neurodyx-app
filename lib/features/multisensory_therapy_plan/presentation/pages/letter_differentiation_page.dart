@@ -239,13 +239,13 @@ class _LetterDifferentiationPageState extends State<LetterDifferentiationPage> {
                             final optionId = '${option}_$index';
                             return Draggable<String>(
                               data: option,
-                              child: _buildOptionButton(option, id: optionId),
                               feedback: _buildOptionButton(option),
                               childWhenDragging: Container(
                                 width: 50,
                                 height: 50,
                                 color: Colors.grey[200],
                               ),
+                              child: _buildOptionButton(option, id: optionId),
                             );
                           }).toList(),
                         ),
@@ -276,10 +276,10 @@ class _LetterDifferentiationPageState extends State<LetterDifferentiationPage> {
                                     : null,
                               );
                             },
-                            onWillAccept: (data) => true,
-                            onAccept: (data) {
+                            onWillAcceptWithDetails: (data) => true,
+                            onAcceptWithDetails: (data) {
                               setState(() {
-                                selectedAnswer = data;
+                                selectedAnswer = data.data;
                               });
                             },
                           ),

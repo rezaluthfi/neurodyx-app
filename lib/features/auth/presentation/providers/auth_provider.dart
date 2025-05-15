@@ -85,7 +85,7 @@ class AuthProvider with ChangeNotifier {
   void _startEmailVerificationPolling() {
     _stopEmailVerificationPolling();
     _emailVerificationTimer =
-        Timer.periodic(Duration(seconds: 5), (timer) async {
+        Timer.periodic(const Duration(seconds: 5), (timer) async {
       await _refreshUser();
     });
   }
@@ -371,7 +371,7 @@ class AuthProvider with ChangeNotifier {
         String username = userDoc.data()?['username'];
 
         // If username is null or empty, use the email prefix or 'User'
-        if (username == null || username.isEmpty) {
+        if (username.isEmpty) {
           // Use the email prefix as username if available
           // Otherwise, use 'User' as default username
           username = updatedFirebaseUser.email != null &&
@@ -393,6 +393,27 @@ class AuthProvider with ChangeNotifier {
             'User refreshed: ${_user?.email}, verified: ${_user?.isEmailVerified}, username: ${_user?.username}');
         notifyListeners();
       }
+    }
+  }
+
+  Future<void> ensureValidToken() async {
+    try {
+      if (_user == null) {
+        throw Exception('No user signed in');
+      }
+      final isValid = await _authRepository.isTokenValid();
+      if (!isValid) {
+        final isRefreshValid = await _authRepository.isRefreshTokenValid();
+        if (!isRefreshValid) {
+          await signOut();
+          throw Exception('Refresh token expired. Please sign in again.');
+        }
+        await _authRepository.refreshAuthToken();
+      }
+    } catch (e) {
+      _setAuthError('Failed to ensure valid token: $e');
+      notifyListeners();
+      rethrow;
     }
   }
 

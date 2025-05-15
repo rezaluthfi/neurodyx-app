@@ -55,5 +55,9 @@
         <string>This app needs access to your photo library to select images for text extraction</string>
         <key>NSMicrophoneUsageDescription</key>
         <string>This app may require access to your microphone when capturing videos</string>
+        
+        <!-- Record Audio permission -->
+        <key>NSMicrophoneUsageDescription</key>
+        <string>We need microphone access for speech recognition</string>
     </dict>
 </plist>

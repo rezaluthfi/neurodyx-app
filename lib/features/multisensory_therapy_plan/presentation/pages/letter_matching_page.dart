@@ -303,16 +303,16 @@ class _LetterMatchingPageState extends State<LetterMatchingPage> {
                                       : null,
                                 );
                               },
-                              onWillAccept: (data) => true,
-                              onAccept: (data) {
+                              onWillAcceptWithDetails: (data) => true,
+                              onAcceptWithDetails: (data) {
                                 setState(() {
                                   if (droppedAnswers.length <= index) {
                                     while (droppedAnswers.length < index) {
                                       droppedAnswers.add('');
                                     }
-                                    droppedAnswers.add(data);
+                                    droppedAnswers.add(data as String);
                                   } else {
-                                    droppedAnswers[index] = data;
+                                    droppedAnswers[index] = data as String;
                                   }
                                 });
                               },
@@ -327,13 +327,13 @@ class _LetterMatchingPageState extends State<LetterMatchingPage> {
                           children: (currentQuestion['options'] as List<String>)
                               .map((option) => Draggable<String>(
                                     data: option,
-                                    child: _buildOptionButton(option),
                                     feedback: _buildOptionButton(option),
                                     childWhenDragging: Container(
                                       width: 50,
                                       height: 50,
                                       color: Colors.grey[200],
                                     ),
+                                    child: _buildOptionButton(option),
                                   ))
                               .toList(),
                         ),

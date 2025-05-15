@@ -37,7 +37,7 @@ class AuthRepository {
     if (tokenTimestamp == null) return false;
 
     final now = DateTime.now().millisecondsSinceEpoch;
-    final oneDayInMillis = 24 * 60 * 60 * 1000; // 1 hari
+    const oneDayInMillis = 24 * 60 * 60 * 1000; // 1 hari
     return (now - tokenTimestamp) < oneDayInMillis;
   }
 
@@ -48,7 +48,7 @@ class AuthRepository {
     if (tokenTimestamp == null) return false;
 
     final now = DateTime.now().millisecondsSinceEpoch;
-    final thirtyDaysInMillis = 30 * 24 * 60 * 60 * 1000; // 30 hari
+    const thirtyDaysInMillis = 30 * 24 * 60 * 60 * 1000; // 30 hari
     return (now - tokenTimestamp) < thirtyDaysInMillis;
   }
 
@@ -110,7 +110,6 @@ class AuthRepository {
       final user = await _authService.signInWithGoogle();
       if (user != null) {
         print('AuthRepository: Google Sign-In successful, fetching token...');
-        final firebaseUser = FirebaseAuth.instance.currentUser;
         // Gunakan Google ID token untuk authType: 'google'
         final token = await _authService.getGoogleIdToken();
         if (token != null) {

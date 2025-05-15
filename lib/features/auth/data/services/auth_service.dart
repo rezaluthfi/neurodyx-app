@@ -445,7 +445,7 @@ class AuthService {
           if (e.code == 'provider-already-linked') {
             await user.updatePassword(newPassword);
           } else {
-            throw e;
+            rethrow;
           }
         }
       } else {

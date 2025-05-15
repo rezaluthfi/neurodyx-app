@@ -169,7 +169,7 @@ class ChatRepository {
       conversation.updateTimestamp();
       await _historyService.saveConversation(conversation);
       debugPrint('Added error message due to failure');
-      throw e;
+      rethrow;
     }
   }
 

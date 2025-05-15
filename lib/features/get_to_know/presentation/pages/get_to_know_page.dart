@@ -4,7 +4,7 @@ import 'package:neurodyx/features/get_to_know/presentation/pages/expert_insights
 import 'package:neurodyx/features/get_to_know/presentation/pages/factors_that_influence_page.dart';
 import 'package:neurodyx/features/get_to_know/presentation/pages/facts_and_myths_page.dart';
 import 'package:neurodyx/features/get_to_know/presentation/pages/what_is_dyslexia_page.dart';
-import 'package:neurodyx/features/screening_assessment/presentation/pages/screening_category_page.dart';
+import 'package:neurodyx/features/smart_screening_and_assessment/presentation/pages/screening/screening_category_page.dart';
 import '../../../../core/constants/app_colors.dart';
 import 'package:flutter_inset_box_shadow/flutter_inset_box_shadow.dart';
 

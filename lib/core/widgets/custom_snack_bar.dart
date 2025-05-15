@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 enum SnackBarType {
   error,
   success,
+  warning,
 }
 
 class CustomSnackBar {
@@ -15,8 +16,11 @@ class CustomSnackBar {
     String actionLabel = 'OK',
   }) {
     // Color for SnackBar based on type
-    final backgroundColor =
-        type == SnackBarType.error ? Colors.red : Colors.green;
+    final backgroundColor = type == SnackBarType.error
+        ? Colors.red
+        : type == SnackBarType.warning
+            ? Colors.orange
+            : Colors.green;
 
     // SnackBar widget
     final snackBar = SnackBar(

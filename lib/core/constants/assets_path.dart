@@ -57,6 +57,12 @@ class AssetPath {
   static const String leonardoPhoto =
       'assets/images/get_to_know/img_get_to_know_leonardo.png';
 
+  // Smart screening and assessment images
+  static const String imgKid =
+      'assets/images/smart_screening_and_assessment/img_kid.png';
+  static const String imgAdult =
+      'assets/images/smart_screening_and_assessment/img_adult.png';
+
   // Therapy result images
   static const String imgTherapyResult1 =
       'assets/images/multisensory_therapy_plan_result/img_therapy_result_1.png';
