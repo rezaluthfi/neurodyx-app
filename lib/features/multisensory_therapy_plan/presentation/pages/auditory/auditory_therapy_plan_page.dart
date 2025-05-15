@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:neurodyx/core/constants/app_colors.dart';
-import 'letter_differentiation_page.dart';
-import 'number_letter_similarity_page.dart';
-import 'letter_matching_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/auditory/letter_sound_guess_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/multisensory_therapy_plan_page.dart';
+import 'word_sound_guess_page.dart';
+import 'word_repetition_page.dart';
 
-class KinestheticTherapyPlanPage extends StatelessWidget {
-  const KinestheticTherapyPlanPage({super.key});
+class AuditoryTherapyPlanPage extends StatelessWidget {
+  const AuditoryTherapyPlanPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +16,12 @@ class KinestheticTherapyPlanPage extends StatelessWidget {
         backgroundColor: AppColors.indigo300,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MultisensoryTherapyPlanPage(),
+            ),
+          ),
         ),
         title: const Text(
           'Therapy Plan',
@@ -32,7 +38,7 @@ class KinestheticTherapyPlanPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Kinesthetic Therapy Plan',
+                    'Auditory Therapy Plan',
                     style: TextStyle(
                       color: AppColors.white,
                       fontSize: 24,
@@ -41,7 +47,7 @@ class KinestheticTherapyPlanPage extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Enhance your tactile and movement-based learning with these activities!',
+                    'Improve your listening and sound recognition skills with these activities!',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
@@ -63,39 +69,45 @@ class KinestheticTherapyPlanPage extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   children: [
                     _buildListTile(
-                      title: 'Letter Differentiation',
-                      subtitle: 'Drag the different letter to the box!',
+                      title: 'Letter Sound Guess',
+                      subtitle: 'Hear the sound. Pick the right letter!',
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const LetterDifferentiationPage(),
+                                const LetterSoundGuessTherapyPage(
+                              category: 'letter_sound_guess',
+                            ),
                           ),
                         );
                       },
                     ),
                     _buildListTile(
-                      title: 'Number & Letter Similarity',
-                      subtitle: 'Match each letter/number with its pair!',
+                      title: 'Word Sound Guess',
+                      subtitle: 'Hear the sound. Tap the matching word!',
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const NumberLetterSimilarityPage(),
+                                const WordSoundGuessTherapyPage(
+                              category: 'word_sound_guess',
+                            ),
                           ),
                         );
                       },
                     ),
                     _buildListTile(
-                      title: 'Letter Matching',
-                      subtitle: 'Drag letters to complete the word!',
+                      title: 'Word Repetition',
+                      subtitle: 'Hear the word. Say it out loud!',
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const LetterMatchingPage(),
+                            builder: (context) => const WordRepetitionPage(
+                              category: 'word_repetition',
+                            ),
                           ),
                         );
                       },

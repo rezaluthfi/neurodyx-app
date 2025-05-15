@@ -8,6 +8,10 @@ import 'package:neurodyx/core/wrappers/auth_wrapper.dart';
 import 'package:neurodyx/features/auth/data/repositories/auth_repository.dart';
 import 'package:neurodyx/features/auth/presentation/providers/auth_provider.dart';
 import 'package:neurodyx/features/chat/presentation/providers/chat_provider.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/data/repositories/therapy_repository.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/data/services/therapy_services.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/multisensory_therapy_plan_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/providers/therapy_provider.dart';
 import 'package:neurodyx/features/scan/data/repositories/scan_repository.dart';
 import 'package:neurodyx/features/scan/data/services/text_action_service.dart';
 import 'package:neurodyx/features/scan/data/services/text_recognition_service.dart';
@@ -98,7 +102,7 @@ class MyApp extends StatelessWidget {
             context.read<AssessmentService>(),
           ),
         ),
-        // Tambahan dependensi untuk Tactile Assessment
+        // Tactile Assessment and Therapy dependencies
         Provider<DigitalInkService>(create: (_) => DigitalInkService()),
         Provider<AudioService>(create: (_) => AudioService()),
         Provider<RecognizeLetterUseCase>(
@@ -114,6 +118,20 @@ class MyApp extends StatelessWidget {
             context.read<AssessmentRepository>(),
             context.read<ConnectivityService>(),
             context.read<DownloadInkModelUseCase>(),
+          ),
+        ),
+        // Therapy feature dependencies
+        Provider<TherapyService>(
+          create: (context) => TherapyService(context.read<AuthRepository>()),
+        ),
+        Provider<TherapyRepository>(
+          create: (context) =>
+              TherapyRepository(context.read<TherapyService>()),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => TherapyProvider(
+            context.read<TherapyRepository>(),
+            context.read<DigitalInkService>(),
           ),
         ),
       ],
@@ -134,7 +152,12 @@ class MyApp extends StatelessWidget {
                         fontFamily: 'OpenDyslexicMono',
                       ),
             ),
-            home: const AuthWrapper(),
+            initialRoute: '/auth_wrapper',
+            routes: {
+              '/auth_wrapper': (context) => const AuthWrapper(),
+              '/multisensory_therapy_plan': (context) =>
+                  const MultisensoryTherapyPlanPage(),
+            },
           );
         },
       ),

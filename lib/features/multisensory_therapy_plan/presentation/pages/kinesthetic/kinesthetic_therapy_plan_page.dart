@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:neurodyx/core/constants/app_colors.dart';
-import 'letter_recognition_page.dart';
-import 'complete_word_page.dart';
-import 'word_recognition_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/multisensory_therapy_plan_page.dart';
+import 'letter_differentiation_page.dart';
+import 'number_letter_similarity_page.dart';
+import 'letter_matching_page.dart';
 
-class VisualTherapyPlanPage extends StatelessWidget {
-  const VisualTherapyPlanPage({super.key});
+class KinestheticTherapyPlanPage extends StatelessWidget {
+  const KinestheticTherapyPlanPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +16,12 @@ class VisualTherapyPlanPage extends StatelessWidget {
         backgroundColor: AppColors.indigo300,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MultisensoryTherapyPlanPage(),
+            ),
+          ),
         ),
         title: const Text(
           'Therapy Plan',
@@ -32,7 +38,7 @@ class VisualTherapyPlanPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Visual Therapy Plan',
+                    'Kinesthetic Therapy Plan',
                     style: TextStyle(
                       color: AppColors.white,
                       fontSize: 24,
@@ -41,7 +47,7 @@ class VisualTherapyPlanPage extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Enhance your visual processing with these activities!',
+                    'Enhance your tactile and movement-based learning with these activities!',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
@@ -63,37 +69,45 @@ class VisualTherapyPlanPage extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   children: [
                     _buildListTile(
-                      title: 'Letter Recognition',
-                      subtitle: 'Distinguish between similar-looking letters',
+                      title: 'Letter Differentiation',
+                      subtitle: 'Drag the different letter to the box!',
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const LetterRecognitionPage(),
+                            builder: (context) =>
+                                const LetterDifferentiationPage(
+                              category: 'letter_differentiation',
+                            ),
                           ),
                         );
                       },
                     ),
                     _buildListTile(
-                      title: 'Complete Word',
-                      subtitle: 'Pick the right letter to finish the word',
+                      title: 'Number & Letter Similarity',
+                      subtitle: 'Match each letter/number with its pair!',
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const CompleteWordPage(),
+                            builder: (context) =>
+                                const NumberLetterSimilarityPage(
+                              category: 'number_letter_similarity',
+                            ),
                           ),
                         );
                       },
                     ),
                     _buildListTile(
-                      title: 'Word Recognition',
-                      subtitle: 'Identify and match words with image',
+                      title: 'Letter Matching',
+                      subtitle: 'Drag letters to complete the word!',
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const WordRecognitionPage(),
+                            builder: (context) => const LetterMatchingPage(
+                              category: 'letter_matching',
+                            ),
                           ),
                         );
                       },

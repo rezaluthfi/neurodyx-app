@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:neurodyx/core/constants/app_colors.dart';
-import 'letter_sound_guess_page.dart';
-import 'word_sound_guess_page.dart';
-import 'word_repetition_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/tactile/complete_word_by_touch_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/multisensory_therapy_plan_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/tactile/word_recognition_by_touch_page.dart';
 
-class AuditoryTherapyPlanPage extends StatelessWidget {
-  const AuditoryTherapyPlanPage({super.key});
+class TactileTherapyPlanPage extends StatelessWidget {
+  const TactileTherapyPlanPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,12 @@ class AuditoryTherapyPlanPage extends StatelessWidget {
         backgroundColor: AppColors.indigo300,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const MultisensoryTherapyPlanPage(),
+            ),
+          ),
         ),
         title: const Text(
           'Therapy Plan',
@@ -32,7 +37,7 @@ class AuditoryTherapyPlanPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Auditory Therapy Plan',
+                    'Tactile Therapy Plan',
                     style: TextStyle(
                       color: AppColors.white,
                       fontSize: 24,
@@ -41,7 +46,7 @@ class AuditoryTherapyPlanPage extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Improve your listening and sound recognition skills with these activities!',
+                    'Improve your touch-based learning with these activities!',
                     style: TextStyle(
                       color: Colors.white70,
                       fontSize: 16,
@@ -63,37 +68,30 @@ class AuditoryTherapyPlanPage extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   children: [
                     _buildListTile(
-                      title: 'Letter Sound Guess',
-                      subtitle: 'Hear the sound. Pick the right letter!',
+                      title: 'Word Recognition by Touch',
+                      subtitle: 'Draw the letter to recognize it!',
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const LetterSoundGuessPage(),
+                            builder: (context) =>
+                                const WordRecognitionByTouchPage(
+                              category: 'word_recognition_by_touch',
+                            ),
                           ),
                         );
                       },
                     ),
                     _buildListTile(
-                      title: 'Word Sound Guess',
-                      subtitle: 'Hear the sound. Tap the matching word!',
+                      title: 'Complete the Word by Touch',
+                      subtitle: 'Draw the missing letter to complete the word!',
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const WordSoundGuessPage(),
-                          ),
-                        );
-                      },
-                    ),
-                    _buildListTile(
-                      title: 'Word Repetition',
-                      subtitle: 'Hear the word. Say it out loud!',
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const WordRepetitionPage(),
+                            builder: (context) => const CompleteWordByTouch(
+                              category: 'complete_the_word_by_touch',
+                            ),
                           ),
                         );
                       },

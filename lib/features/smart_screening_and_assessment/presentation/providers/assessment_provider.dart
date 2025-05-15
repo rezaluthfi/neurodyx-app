@@ -50,8 +50,10 @@ class AssessmentProvider with ChangeNotifier {
   bool _isModelDownloaded = false;
   String _downloadStatus = 'checking';
   int _downloadAttempts = 0;
-  double _downloadProgress = 0.0; // New property for progress
+  double _downloadProgress = 0.0;
   static const int _maxDownloadAttempts = 3;
+  // Flag to track if results have been fetched already
+  bool _resultsAreLoaded = false;
 
   List<AssessmentQuestionModel> get questions => _questions;
   Map<String, int> get scores => _scores;
@@ -64,6 +66,7 @@ class AssessmentProvider with ChangeNotifier {
   int get downloadAttempts => _downloadAttempts;
   int get maxDownloadAttempts => _maxDownloadAttempts;
   double get downloadProgress => _downloadProgress;
+  bool get resultsAreLoaded => _resultsAreLoaded;
 
   Future<void> fetchQuestions(BuildContext context) async {
     if (_isFetchingQuestions) return;
@@ -256,7 +259,8 @@ class AssessmentProvider with ChangeNotifier {
   }
 
   Future<void> fetchResults(BuildContext context) async {
-    if (_isFetchingQuestions) return;
+    // Prevent multiple fetches if already loaded or in progress
+    if (_isFetchingQuestions || _resultsAreLoaded) return;
 
     _isFetchingQuestions = true;
     _errorMessage = null;
@@ -280,6 +284,7 @@ class AssessmentProvider with ChangeNotifier {
         _statuses[result.type] = result.status;
         _totalQuestions[result.type] = result.totalQuestions;
       }
+      _resultsAreLoaded = true; // Mark results as loaded
       _isFetchingQuestions = false;
       notifyListeners();
     } catch (e) {
@@ -322,6 +327,7 @@ class AssessmentProvider with ChangeNotifier {
     _downloadStatus = 'checking';
     _downloadAttempts = 0;
     _downloadProgress = 0.0;
+    _resultsAreLoaded = false; // Reset the results loaded flag
     notifyListeners();
   }
 }

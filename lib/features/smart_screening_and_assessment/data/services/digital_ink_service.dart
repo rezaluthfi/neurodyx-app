@@ -8,12 +8,19 @@ class DigitalInkService {
   late DigitalInkRecognizer _recognizer;
   final Ink _ink = Ink();
   static const int _maxDownloadAttempts = 3;
-  final _progressController = StreamController<double>.broadcast();
+  StreamController<double>? _progressController;
 
-  Stream<double> get downloadProgress => _progressController.stream;
+  Stream<double> get downloadProgress =>
+      _progressController?.stream ?? Stream<double>.empty();
 
   DigitalInkService() {
     _recognizer = DigitalInkRecognizer(languageCode: 'en');
+    _initializeProgressController();
+  }
+
+  void _initializeProgressController() {
+    _progressController = StreamController<double>.broadcast();
+    print('ProgressController initialized');
   }
 
   Future<bool> checkAndDownloadModel() async {
@@ -23,20 +30,28 @@ class DigitalInkService {
     while (attempts < _maxDownloadAttempts && !success) {
       try {
         if (await _modelManager.isModelDownloaded('en')) {
-          _progressController.add(1.0);
+          if (!_progressController!.isClosed) {
+            _progressController!.add(1.0);
+          }
           return true;
         }
 
-        _progressController.add(0.0); // Start progress
+        if (!_progressController!.isClosed) {
+          _progressController!.add(0.0); // Start progress
+        }
         attempts++;
 
         // Simulate progress during download (since ML Kit doesn't provide progress)
         Timer.periodic(const Duration(milliseconds: 500), (timer) async {
           if (timer.tick * 0.05 >= 1.0 || success) {
             timer.cancel();
-            if (success) _progressController.add(1.0);
+            if (success && !_progressController!.isClosed) {
+              _progressController!.add(1.0);
+            }
           } else {
-            _progressController.add(timer.tick * 0.05);
+            if (!_progressController!.isClosed) {
+              _progressController!.add(timer.tick * 0.05);
+            }
           }
         });
 
@@ -46,15 +61,20 @@ class DigitalInkService {
             );
 
         if (success) {
-          _progressController.add(1.0);
+          if (!_progressController!.isClosed) {
+            _progressController!.add(1.0);
+          }
           return true;
         } else {
           await Future.delayed(const Duration(seconds: 2));
         }
       } catch (e) {
+        print('Error checking/downloading model: $e');
         attempts++;
         if (attempts >= _maxDownloadAttempts) {
-          _progressController.addError(e);
+          if (!_progressController!.isClosed) {
+            _progressController!.addError(e);
+          }
           return false;
         }
         await Future.delayed(const Duration(seconds: 2));
@@ -88,8 +108,24 @@ class DigitalInkService {
     }
   }
 
+  void reset() {
+    _recognizer.close();
+    _recognizer = DigitalInkRecognizer(languageCode: 'en');
+    if (_progressController == null || _progressController!.isClosed) {
+      _initializeProgressController();
+    } else {
+      if (!_progressController!.isClosed) {
+        _progressController!.add(0.0);
+      }
+    }
+    print('DigitalInkService reset');
+  }
+
   void dispose() {
     _recognizer.close();
-    _progressController.close();
+    if (_progressController != null && !_progressController!.isClosed) {
+      _progressController!.close();
+    }
+    print('DigitalInkService disposed');
   }
 }

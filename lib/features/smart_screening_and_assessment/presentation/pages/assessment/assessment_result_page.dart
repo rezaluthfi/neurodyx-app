@@ -5,10 +5,10 @@ import 'package:neurodyx/features/main/presentation/pages/main_navigator.dart';
 import 'package:provider/provider.dart';
 import 'package:neurodyx/features/smart_screening_and_assessment/presentation/widgets/assessment_card.dart';
 import 'package:neurodyx/features/smart_screening_and_assessment/presentation/widgets/assessment_shimmer_card.dart';
-import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/visual_therapy_plan_page.dart';
-import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/auditory_therapy_plan_page.dart';
-import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/kinesthetic_therapy_plan_page.dart';
-import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/tactile_therapy_plan_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/visual/visual_therapy_plan_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/auditory/auditory_therapy_plan_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/kinesthetic/kinesthetic_therapy_plan_page.dart';
+import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/tactile/tactile_therapy_plan_page.dart';
 import '../../../../../../core/constants/app_colors.dart';
 import '../../../../../../core/widgets/custom_snack_bar.dart';
 import '../../providers/assessment_provider.dart';
@@ -31,13 +31,18 @@ class AssessmentResultPage extends StatefulWidget {
 
 class _AssessmentResultPageState extends State<AssessmentResultPage> {
   bool _isNavigating = false;
+  bool _dataFetched = false; // Track if data has been fetched already
 
   @override
   void initState() {
     super.initState();
+    // Only fetch results once when the widget is first initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<AssessmentProvider>(context, listen: false)
-          .fetchResults(context);
+      if (!_dataFetched) {
+        _dataFetched = true;
+        Provider.of<AssessmentProvider>(context, listen: false)
+            .fetchResults(context);
+      }
     });
   }
 
@@ -76,7 +81,7 @@ class _AssessmentResultPageState extends State<AssessmentResultPage> {
   // Get therapy recommendation message
   String _getTherapyRecommendation(String therapyType) {
     if (therapyType == 'balanced') {
-      return 'Congratulations! You achieved perfect scores in all assessments. We recommend a Balanced Therapy Plan to maintain and enhance your skills across all areas.';
+      return 'Congratulations! You achieved perfect scores in all assessments. We recommend all therapy plan to you try to maintain and enhance your skills across all areas.';
     }
     String capitalizedType =
         therapyType.substring(0, 1).toUpperCase() + therapyType.substring(1);
@@ -99,10 +104,10 @@ class _AssessmentResultPageState extends State<AssessmentResultPage> {
         CustomSnackBar.show(
           context,
           message:
-              'Amazing job! You got all answers correct. Starting Balanced Therapy Plan.',
+              'Amazing job! You got all answers correct. Try Visual Therapy Plan first.',
           type: SnackBarType.success,
         );
-        // For balanced plan, default to VisualTherapyPlan or a custom page
+        // For balanced plan, default to VisualTherapyPlanPage or a custom page
         targetPage = const VisualTherapyPlanPage();
       } else {
         switch (therapyType) {
@@ -151,6 +156,16 @@ class _AssessmentResultPageState extends State<AssessmentResultPage> {
   Widget build(BuildContext context) {
     return Consumer<AssessmentProvider>(
       builder: (context, provider, child) {
+        // Get the provider data, but prioritize using widget data if available
+        final Map<String, int> currentScores =
+            widget.scores.isNotEmpty ? widget.scores : provider.scores;
+        final Map<String, int> currentTotalQuestions =
+            widget.totalQuestions.isNotEmpty
+                ? widget.totalQuestions
+                : provider.totalQuestions;
+        final Map<String, String> currentStatuses =
+            widget.statuses.isNotEmpty ? widget.statuses : provider.statuses;
+
         if (provider.isLoading) {
           return Scaffold(
             backgroundColor: AppColors.offWhite,
@@ -187,7 +202,7 @@ class _AssessmentResultPageState extends State<AssessmentResultPage> {
 
         // Determine therapy recommendation
         final recommendedTherapyType =
-            _getLowestScoreType(provider.scores, provider.totalQuestions);
+            _getLowestScoreType(currentScores, currentTotalQuestions);
 
         return Scaffold(
           backgroundColor: AppColors.offWhite,
@@ -239,9 +254,8 @@ class _AssessmentResultPageState extends State<AssessmentResultPage> {
                             title: 'VISUAL',
                             icon: '👁️',
                             score:
-                                '${provider.scores['visual'] ?? 0}/${provider.totalQuestions['visual'] ?? 1}',
-                            status:
-                                provider.statuses['visual'] ?? 'not started',
+                                '${currentScores['visual'] ?? 0}/${currentTotalQuestions['visual'] ?? 1}',
+                            status: currentStatuses['visual'] ?? 'not started',
                             statusColor: Colors.green,
                             onTap: () {},
                             showProgress: true,
@@ -251,9 +265,9 @@ class _AssessmentResultPageState extends State<AssessmentResultPage> {
                             title: 'AUDITORY',
                             icon: '📢',
                             score:
-                                '${provider.scores['auditory'] ?? 0}/${provider.totalQuestions['auditory'] ?? 1}',
+                                '${currentScores['auditory'] ?? 0}/${currentTotalQuestions['auditory'] ?? 1}',
                             status:
-                                provider.statuses['auditory'] ?? 'not started',
+                                currentStatuses['auditory'] ?? 'not started',
                             statusColor: Colors.green,
                             onTap: () {},
                             showProgress: true,
@@ -263,9 +277,9 @@ class _AssessmentResultPageState extends State<AssessmentResultPage> {
                             title: 'KINESTHETIC',
                             icon: '✋',
                             score:
-                                '${provider.scores['kinesthetic'] ?? 0}/${provider.totalQuestions['kinesthetic'] ?? 1}',
-                            status: provider.statuses['kinesthetic'] ??
-                                'not started',
+                                '${currentScores['kinesthetic'] ?? 0}/${currentTotalQuestions['kinesthetic'] ?? 1}',
+                            status:
+                                currentStatuses['kinesthetic'] ?? 'not started',
                             statusColor: Colors.green,
                             onTap: () {},
                             showProgress: true,
@@ -275,9 +289,8 @@ class _AssessmentResultPageState extends State<AssessmentResultPage> {
                             title: 'TACTILE',
                             icon: '🎶',
                             score:
-                                '${provider.scores['tactile'] ?? 0}/${provider.totalQuestions['tactile'] ?? 1}',
-                            status:
-                                provider.statuses['tactile'] ?? 'not started',
+                                '${currentScores['tactile'] ?? 0}/${currentTotalQuestions['tactile'] ?? 1}',
+                            status: currentStatuses['tactile'] ?? 'not started',
                             statusColor: Colors.green,
                             onTap: () {},
                             showProgress: true,
@@ -350,7 +363,7 @@ class _AssessmentResultPageState extends State<AssessmentResultPage> {
                                     context, recommendedTherapyType),
                             child: Text(
                               recommendedTherapyType == 'balanced'
-                                  ? 'Start Balanced Therapy Plan'
+                                  ? 'Start All Therapy Plan'
                                   : 'Start ${recommendedTherapyType.substring(0, 1).toUpperCase() + recommendedTherapyType.substring(1)} Therapy Plan',
                               style: TextStyle(
                                 fontSize: 16,

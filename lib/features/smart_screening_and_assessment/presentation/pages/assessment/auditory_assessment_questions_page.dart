@@ -27,6 +27,11 @@ class _AuditoryAssessmentQuestionsPageState
   bool _isListening = false;
   bool isSubmitting = false;
 
+  // Track correct answers count
+  int correctAnswersCount = 0;
+  // Keep track of which questions have been answered correctly
+  Set<String> answeredQuestionIds = {};
+
   @override
   void dispose() {
     _audioPlayer.dispose();
@@ -80,19 +85,36 @@ class _AuditoryAssessmentQuestionsPageState
           onResult: (result) {
             if (result.finalResult) {
               String spokenText = result.recognizedWords.trim().toLowerCase();
+
+              // Get current question ID
+              final currentQuestion =
+                  Provider.of<AssessmentProvider>(context, listen: false)
+                      .questions
+                      .where((q) => q.type == 'auditory')
+                      .toList()[currentQuestionIndex];
+
+              final questionId = currentQuestion.id;
+
+              // Check if answer is correct
+              bool isCorrect =
+                  spokenText.toLowerCase() == correctAnswer.toLowerCase();
+
               setState(() {
                 _isListening = false;
                 selectedAnswer =
                     spokenText.isNotEmpty ? spokenText : 'no_input';
+
+                // If correct and not already counted, increment the counter
+                if (isCorrect && !answeredQuestionIds.contains(questionId)) {
+                  correctAnswersCount++;
+                  answeredQuestionIds.add(questionId);
+                }
               });
-              // Silently record the answer (correct or incorrect) for assessment
+
+              // Add answer to provider (existing code)
               Provider.of<AssessmentProvider>(context, listen: false).addAnswer(
                 'auditory',
-                Provider.of<AssessmentProvider>(context, listen: false)
-                    .questions
-                    .where((q) => q.type == 'auditory')
-                    .toList()[currentQuestionIndex]
-                    .id,
+                questionId,
                 spokenText,
               );
             }
@@ -109,6 +131,28 @@ class _AuditoryAssessmentQuestionsPageState
       _speech.stop();
       setState(() => _isListening = false);
     }
+  }
+
+  // Handle multiple-choice answers (for letter_sound_guess and word_sound_guess)
+  void _handleMultipleChoiceAnswer(
+      String option, String correctAnswer, String questionId) {
+    setState(() {
+      selectedAnswer = option;
+
+      // Check if this answer is correct and not already counted
+      bool isCorrect = option.toLowerCase() == correctAnswer.toLowerCase();
+      if (isCorrect && !answeredQuestionIds.contains(questionId)) {
+        correctAnswersCount++;
+        answeredQuestionIds.add(questionId);
+      }
+    });
+
+    // Record the answer in the provider
+    Provider.of<AssessmentProvider>(context, listen: false).addAnswer(
+      'auditory',
+      questionId,
+      option,
+    );
   }
 
   @override
@@ -245,23 +289,53 @@ class _AuditoryAssessmentQuestionsPageState
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                    Text(
-                                      '${currentQuestionIndex + 1}/${auditoryQuestions.length}',
-                                      style: const TextStyle(
-                                        color: AppColors.textPrimary,
-                                        fontSize: 14,
-                                      ),
+                                    // Updated to show both question progress and correct answers
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                          'Question ${currentQuestionIndex + 1} of ${auditoryQuestions.length}',
+                                          style: const TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Score: $correctAnswersCount/${auditoryQuestions.length}',
+                                          style: const TextStyle(
+                                            color: AppColors.primary,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
-                                LinearProgressIndicator(
-                                  value: (currentQuestionIndex + 1) /
-                                      auditoryQuestions.length,
-                                  backgroundColor: Colors.grey[300],
-                                  color: AppColors.primary,
-                                  minHeight: 8,
-                                  borderRadius: BorderRadius.circular(8),
+                                // Two progress indicators - one for question progress, one for score
+                                Column(
+                                  children: [
+                                    LinearProgressIndicator(
+                                      value: (currentQuestionIndex + 1) /
+                                          auditoryQuestions.length,
+                                      backgroundColor: Colors.grey[300],
+                                      color: AppColors.primary,
+                                      minHeight: 8,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    // Score progress indicator
+                                    LinearProgressIndicator(
+                                      value: correctAnswersCount /
+                                          auditoryQuestions.length,
+                                      backgroundColor: Colors.grey[300],
+                                      color: Colors.green,
+                                      minHeight: 4,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ],
                                 ),
                                 const SizedBox(height: 24),
                                 Text(
@@ -334,9 +408,13 @@ class _AuditoryAssessmentQuestionsPageState
                                               width: 80,
                                               height: 50,
                                               child: ElevatedButton(
-                                                onPressed: () => setState(() {
-                                                  selectedAnswer = option;
-                                                }),
+                                                onPressed: () =>
+                                                    _handleMultipleChoiceAnswer(
+                                                        option,
+                                                        currentQuestion
+                                                                .correctAnswer ??
+                                                            '',
+                                                        currentQuestion.id),
                                                 style: ElevatedButton.styleFrom(
                                                   backgroundColor:
                                                       selectedAnswer == option
@@ -379,9 +457,13 @@ class _AuditoryAssessmentQuestionsPageState
                                               child: SizedBox(
                                                 width: double.infinity,
                                                 child: ElevatedButton(
-                                                  onPressed: () => setState(() {
-                                                    selectedAnswer = option;
-                                                  }),
+                                                  onPressed: () =>
+                                                      _handleMultipleChoiceAnswer(
+                                                          option,
+                                                          currentQuestion
+                                                                  .correctAnswer ??
+                                                              '',
+                                                          currentQuestion.id),
                                                   style:
                                                       ElevatedButton.styleFrom(
                                                     backgroundColor:
