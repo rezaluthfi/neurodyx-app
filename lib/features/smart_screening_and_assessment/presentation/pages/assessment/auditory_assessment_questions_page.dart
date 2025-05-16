@@ -301,14 +301,6 @@ class _AuditoryAssessmentQuestionsPageState
                                             fontSize: 14,
                                           ),
                                         ),
-                                        Text(
-                                          'Score: $correctAnswersCount/${auditoryQuestions.length}',
-                                          style: const TextStyle(
-                                            color: AppColors.primary,
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
                                       ],
                                     ),
                                   ],
@@ -323,16 +315,6 @@ class _AuditoryAssessmentQuestionsPageState
                                       backgroundColor: Colors.grey[300],
                                       color: AppColors.primary,
                                       minHeight: 8,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    // Score progress indicator
-                                    LinearProgressIndicator(
-                                      value: correctAnswersCount /
-                                          auditoryQuestions.length,
-                                      backgroundColor: Colors.grey[300],
-                                      color: Colors.green,
-                                      minHeight: 4,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ],
