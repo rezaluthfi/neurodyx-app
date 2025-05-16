@@ -6,8 +6,10 @@ import 'package:neurodyx/core/providers/font_providers.dart';
 import 'package:neurodyx/core/services/connectivity_service.dart';
 import 'package:neurodyx/core/wrappers/auth_wrapper.dart';
 import 'package:neurodyx/features/auth/data/repositories/auth_repository.dart';
+import 'package:neurodyx/features/auth/data/services/auth_service.dart';
 import 'package:neurodyx/features/auth/presentation/providers/auth_provider.dart';
 import 'package:neurodyx/features/chat/presentation/providers/chat_provider.dart';
+import 'package:neurodyx/features/main/presentation/pages/main_navigator.dart';
 import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/data/repositories/therapy_repository.dart';
 import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/data/services/therapy_services.dart';
 import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/multisensory_therapy_plan_page.dart';
@@ -27,22 +29,23 @@ import 'package:neurodyx/features/smart_screening_and_assessment/data/services/d
 import 'package:neurodyx/features/smart_screening_and_assessment/data/services/audio_service.dart';
 import 'package:neurodyx/features/smart_screening_and_assessment/domain/usecases/recognize_letter_usecase.dart';
 import 'package:neurodyx/features/smart_screening_and_assessment/domain/usecases/download_ink_model_usecase.dart';
+import 'package:neurodyx/features/progress/data/repositories/progress_repository.dart';
+import 'package:neurodyx/features/progress/data/services/progress_service.dart';
+import 'package:neurodyx/features/progress/domain/usecases/fetch_progress_usecase.dart';
+import 'package:neurodyx/features/progress/presentation/providers/progress_provider.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize FontProvider
   final fontProvider = FontProvider();
   await fontProvider.initialize();
 
-  // Load environment variables
   await dotenv.load(fileName: '.env');
 
   runApp(MyApp(fontProvider: fontProvider));
@@ -71,10 +74,8 @@ class MyApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
-        // Shared dependencies
         Provider<ConnectivityService>(create: (_) => ConnectivityService()),
         Provider<AuthRepository>(create: (_) => AuthRepository()),
-        // Screening feature dependencies
         Provider<ScreeningService>(
           create: (context) => ScreeningService(
             context.read<AuthRepository>(),
@@ -91,7 +92,6 @@ class MyApp extends StatelessWidget {
             context.read<ConnectivityService>(),
           ),
         ),
-        // Assessment feature dependencies
         Provider<AssessmentService>(
           create: (context) => AssessmentService(
             context.read<AuthRepository>(),
@@ -102,7 +102,6 @@ class MyApp extends StatelessWidget {
             context.read<AssessmentService>(),
           ),
         ),
-        // Tactile Assessment and Therapy dependencies
         Provider<DigitalInkService>(create: (_) => DigitalInkService()),
         Provider<AudioService>(create: (_) => AudioService()),
         Provider<RecognizeLetterUseCase>(
@@ -120,7 +119,6 @@ class MyApp extends StatelessWidget {
             context.read<DownloadInkModelUseCase>(),
           ),
         ),
-        // Therapy feature dependencies
         Provider<TherapyService>(
           create: (context) => TherapyService(context.read<AuthRepository>()),
         ),
@@ -132,6 +130,27 @@ class MyApp extends StatelessWidget {
           create: (context) => TherapyProvider(
             context.read<TherapyRepository>(),
             context.read<DigitalInkService>(),
+          ),
+        ),
+        Provider<AuthService>(create: (_) => AuthService()),
+        Provider<ProgressService>(
+          create: (context) =>
+              ProgressService(authService: context.read<AuthService>()),
+        ),
+        Provider<ProgressRepository>(
+          create: (context) => ProgressRepository(
+            progressService: context.read<ProgressService>(),
+          ),
+        ),
+        Provider<FetchProgressUseCase>(
+          create: (context) => FetchProgressUseCase(
+            repository: context.read<ProgressRepository>(),
+          ),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ProgressProvider(
+            fetchProgressUseCase: context.read<FetchProgressUseCase>(),
+            authProvider: context.read<AuthProvider>(),
           ),
         ),
       ],
@@ -155,6 +174,9 @@ class MyApp extends StatelessWidget {
             initialRoute: '/auth_wrapper',
             routes: {
               '/auth_wrapper': (context) => const AuthWrapper(),
+              '/home': (context) => const MainNavigator(
+                    initialIndex: 0, // Default to HomePage tab
+                  ),
               '/multisensory_therapy_plan': (context) =>
                   const MultisensoryTherapyPlanPage(),
             },

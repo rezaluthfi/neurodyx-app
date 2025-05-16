@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:neurodyx/core/constants/app_colors.dart';
+import 'package:neurodyx/features/home/presentation/pages/home_page.dart';
 import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/tactile/complete_word_by_touch_page.dart';
 import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/multisensory_therapy_plan_page.dart';
 import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/tactile/word_recognition_by_touch_page.dart';
@@ -15,12 +16,14 @@ class TactileTherapyPlanPage extends StatelessWidget {
         backgroundColor: AppColors.indigo300,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.white),
-          onPressed: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MultisensoryTherapyPlanPage(),
-            ),
-          ),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MultisensoryTherapyPlanPage(),
+              ),
+            );
+          },
         ),
         title: const Text(
           'Therapy Plan',

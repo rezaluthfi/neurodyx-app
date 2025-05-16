@@ -5,11 +5,13 @@ class TherapyQuestionModel {
   final String? content;
   final String? description;
   final String? imageURL;
-  final String? soundURL; // Added soundURL
+  final String? soundURL;
   final List<String>? options;
   final String? correctAnswer;
   final Map<String, String>? correctPairs;
   final List<String>? correctSequence;
+  final List<String>? leftItems; // Added leftItems
+  final List<String>? rightItems; // Added rightItems
 
   TherapyQuestionModel({
     required this.id,
@@ -18,11 +20,13 @@ class TherapyQuestionModel {
     this.content,
     this.description,
     this.imageURL,
-    this.soundURL, // Added to constructor
+    this.soundURL,
     this.options,
     this.correctAnswer,
     this.correctPairs,
     this.correctSequence,
+    this.leftItems, // Added to constructor
+    this.rightItems, // Added to constructor
   });
 
   factory TherapyQuestionModel.fromJson(Map<String, dynamic> json) {
@@ -42,12 +46,16 @@ class TherapyQuestionModel {
       content: json['content'] as String?,
       description: json['description'] as String?,
       imageURL: json['imageURL'] as String?,
-      soundURL: json['soundURL'] as String?, // Parse soundURL
+      soundURL: json['soundURL'] as String?,
       options: (json['options'] as List<dynamic>?)?.cast<String>(),
       correctAnswer: correctAnswer,
       correctPairs: correctPairs,
       correctSequence:
           (json['correctSequence'] as List<dynamic>?)?.cast<String>(),
+      leftItems: (json['leftItems'] as List<dynamic>?)
+          ?.cast<String>(), // Parse leftItems
+      rightItems: (json['rightItems'] as List<dynamic>?)
+          ?.cast<String>(), // Parse rightItems
     );
   }
 }

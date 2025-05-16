@@ -17,6 +17,10 @@ class LetterMatchingPage extends StatefulWidget {
 class _LetterMatchingPageState extends State<LetterMatchingPage> {
   int currentQuestionIndex = 0;
   List<String> droppedAnswers = [];
+
+  // Menambahkan set untuk melacak indeks opsi yang telah digunakan
+  Set<String> usedOptionIds = {};
+
   bool isSubmitting = false;
 
   @override
@@ -73,6 +77,7 @@ class _LetterMatchingPageState extends State<LetterMatchingPage> {
         setState(() {
           currentQuestionIndex++;
           droppedAnswers = [];
+          usedOptionIds = {}; // Reset usedOptionIds for next question
         });
         return;
       }
@@ -421,7 +426,7 @@ class _LetterMatchingPageState extends State<LetterMatchingPage> {
               runSpacing: 8,
               children: List.generate(
                 dropCount,
-                (index) => DragTarget<String>(
+                (index) => DragTarget<Map<String, dynamic>>(
                   builder: (context, candidateData, rejectedData) {
                     return Container(
                       width: 60,
@@ -450,11 +455,18 @@ class _LetterMatchingPageState extends State<LetterMatchingPage> {
                   },
                   onWillAcceptWithDetails: (data) => true,
                   onAcceptWithDetails: (data) {
+                    final dragData = data.data;
                     setState(() {
+                      final optionId = dragData['id'] as String;
+                      final optionValue = dragData['value'] as String;
+
+                      // Tandai option id ini sebagai telah digunakan
+                      usedOptionIds.add(optionId);
+
                       if (index < droppedAnswers.length) {
-                        droppedAnswers[index] = data.data;
+                        droppedAnswers[index] = optionValue;
                       } else {
-                        droppedAnswers.add(data.data);
+                        droppedAnswers.add(optionValue);
                       }
                     });
                   },
@@ -469,18 +481,24 @@ class _LetterMatchingPageState extends State<LetterMatchingPage> {
               spacing: 16,
               runSpacing: 16,
               children: options.asMap().entries.map((entry) {
-                final index = entry.key;
+                final optionIndex = entry.key;
                 final option = entry.value;
-                final optionId = '${option}_$index';
-                if (droppedAnswers.contains(option)) {
+                final optionId = '${option}_$optionIndex';
+
+                // Periksa apakah option id ini telah digunakan
+                if (usedOptionIds.contains(optionId)) {
                   return Container(
                     width: 60,
                     height: 60,
                     color: Colors.grey[200],
                   );
                 }
-                return Draggable<String>(
-                  data: option,
+
+                // Membuat data yang akan dikirim saat drag
+                final dragData = {'id': optionId, 'value': option};
+
+                return Draggable<Map<String, dynamic>>(
+                  data: dragData,
                   feedback: _buildOptionButton(option, size: 60, fontSize: 24),
                   childWhenDragging: Container(
                     width: 60,

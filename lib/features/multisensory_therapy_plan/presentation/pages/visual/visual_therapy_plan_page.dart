@@ -66,12 +66,14 @@ class _VisualTherapyPlanPageState extends State<VisualTherapyPlanPage> {
         backgroundColor: AppColors.indigo300,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.white),
-          onPressed: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MultisensoryTherapyPlanPage(),
-            ),
-          ),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MultisensoryTherapyPlanPage(),
+              ),
+            );
+          },
         ),
         title: const Text(
           'Therapy Plan',

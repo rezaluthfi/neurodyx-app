@@ -29,15 +29,15 @@ class _NumberLetterSimilarityPageState
   // Store navigator state to avoid context issues
   NavigatorState? _navigator;
 
-  void _initializeKeys(List<String> options, List<String> matchesList) {
+  void _initializeKeys(List<String> leftItems, List<String> rightItems) {
     optionKeys.clear();
     matchKeys.clear();
-    for (int i = 0; i < options.length; i++) {
-      String optionId = 'left_${options[i]}_$i';
+    for (int i = 0; i < leftItems.length; i++) {
+      String optionId = 'left_${leftItems[i]}_$i';
       optionKeys[optionId] = GlobalKey();
     }
-    for (int i = 0; i < matchesList.length; i++) {
-      String matchId = 'right_${matchesList[i]}_$i';
+    for (int i = 0; i < rightItems.length; i++) {
+      String matchId = 'right_${rightItems[i]}_$i';
       matchKeys[matchId] = GlobalKey();
     }
   }
@@ -216,11 +216,13 @@ class _NumberLetterSimilarityPageState
         final isLastQuestion =
             currentQuestionIndex == provider.questions.length - 1;
 
+        // Use leftItems and rightItems from the API response
+        final leftItems = currentQuestion.leftItems ?? [];
+        final rightItems = currentQuestion.rightItems ?? [];
         final correctPairs = currentQuestion.correctPairs ?? {};
-        List<String> options = correctPairs.keys.toList();
-        List<String> matchesList = correctPairs.values.toList();
 
-        _initializeKeys(options, matchesList);
+        _initializeKeys(leftItems, rightItems);
+        // Check if all items that need to be matched have been matched
         bool canProceed = matches.length == correctPairs.length;
 
         return WillPopScope(
@@ -311,8 +313,8 @@ class _NumberLetterSimilarityPageState
                                 _buildQuestionContent(
                                   currentQuestion,
                                   constraints.maxWidth,
-                                  options,
-                                  matchesList,
+                                  leftItems,
+                                  rightItems,
                                 ),
                               ],
                             ),
@@ -398,14 +400,13 @@ class _NumberLetterSimilarityPageState
     );
   }
 
-  // Rest of the code remains the same...
   Widget _buildQuestionContent(
     dynamic currentQuestion,
     double maxWidth,
-    List<String> options,
-    List<String> matchesList,
+    List<String> leftItems,
+    List<String> rightItems,
   ) {
-    if (options.isEmpty || matchesList.isEmpty) {
+    if (leftItems.isEmpty || rightItems.isEmpty) {
       return const Center(
         child: Text(
           'No options available',
@@ -436,8 +437,8 @@ class _NumberLetterSimilarityPageState
                           pairs: matchedPairs,
                           optionKeys: optionKeys,
                           matchKeys: matchKeys,
-                          options: options,
-                          matches: matchesList,
+                          leftItems: leftItems,
+                          rightItems: rightItems,
                           constraints: BoxConstraints(maxWidth: maxWidth - 50),
                           customPaintRenderBox: _customPaintKey.currentContext
                               ?.findRenderObject() as RenderBox?,
@@ -458,7 +459,7 @@ class _NumberLetterSimilarityPageState
                               spacing: 16,
                               alignment: WrapAlignment.center,
                               crossAxisAlignment: WrapCrossAlignment.center,
-                              children: options.asMap().entries.map((entry) {
+                              children: leftItems.asMap().entries.map((entry) {
                                 final index = entry.key;
                                 final option = entry.value;
                                 final optionId = 'left_${option}_$index';
@@ -503,8 +504,7 @@ class _NumberLetterSimilarityPageState
                               spacing: 16,
                               alignment: WrapAlignment.center,
                               crossAxisAlignment: WrapCrossAlignment.center,
-                              children:
-                                  matchesList.asMap().entries.map((entry) {
+                              children: rightItems.asMap().entries.map((entry) {
                                 final index = entry.key;
                                 final match = entry.value;
                                 final matchId = 'right_${match}_$index';
@@ -587,8 +587,8 @@ class LinePainter extends CustomPainter {
   final List<MapEntry<String, String>> pairs;
   final Map<String, GlobalKey> optionKeys;
   final Map<String, GlobalKey> matchKeys;
-  final List<String> options;
-  final List<String> matches;
+  final List<String> leftItems;
+  final List<String> rightItems;
   final BoxConstraints constraints;
   final RenderBox? customPaintRenderBox;
 
@@ -596,8 +596,8 @@ class LinePainter extends CustomPainter {
     required this.pairs,
     required this.optionKeys,
     required this.matchKeys,
-    required this.options,
-    required this.matches,
+    required this.leftItems,
+    required this.rightItems,
     required this.constraints,
     required this.customPaintRenderBox,
   });
@@ -613,8 +613,8 @@ class LinePainter extends CustomPainter {
       final left = pair.key;
       final right = pair.value;
 
-      int leftIndex = options.indexOf(left);
-      int rightIndex = matches.indexOf(right);
+      int leftIndex = leftItems.indexOf(left);
+      int rightIndex = rightItems.indexOf(right);
       String leftId = 'left_${left}_$leftIndex';
       String rightId = 'right_${right}_$rightIndex';
 

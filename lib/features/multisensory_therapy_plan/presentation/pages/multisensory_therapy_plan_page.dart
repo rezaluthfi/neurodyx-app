@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:neurodyx/core/constants/app_colors.dart';
-import 'package:neurodyx/features/home/presentation/pages/home_page.dart';
 import 'visual/visual_therapy_plan_page.dart';
 import 'auditory/auditory_therapy_plan_page.dart';
 import 'kinesthetic/kinesthetic_therapy_plan_page.dart';
@@ -29,11 +28,11 @@ class MultisensoryTherapyPlanPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () {
-            Navigator.pushReplacement(
+            // Navigate to MainNavigator with HomePage tab
+            Navigator.pushNamedAndRemoveUntil(
               context,
-              MaterialPageRoute(
-                builder: (context) => const HomePage(),
-              ),
+              '/home',
+              (route) => false, // Clear stack to make MainNavigator the root
             );
           },
         ),

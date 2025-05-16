@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:neurodyx/features/get_to_know/presentation/pages/get_to_know_page.dart';
 import 'package:neurodyx/features/multisensory_therapy_plan/presentation/pages/multisensory_therapy_plan_page.dart';
 import 'package:neurodyx/features/smart_screening_and_assessment/presentation/pages/smart_screening_and_assessment_page.dart';
+import 'package:neurodyx/features/progress/presentation/pages/progress_page.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/assets_path.dart';
@@ -142,7 +143,12 @@ class _HomePageState extends State<HomePage> {
                   backgroundColor: AppColors.yellow200,
                   iconPath: AssetPath.iconFire3D,
                   onTap: () {
-                    // Add navigation or logic for "Track"
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ProgressPage(),
+                      ),
+                    );
                   },
                 ),
 
