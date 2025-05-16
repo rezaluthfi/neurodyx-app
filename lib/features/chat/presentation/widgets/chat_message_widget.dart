@@ -13,7 +13,7 @@ class ChatMessageWidget extends StatefulWidget {
   });
 
   @override
-  _ChatMessageWidgetState createState() => _ChatMessageWidgetState();
+  State<ChatMessageWidget> createState() => _ChatMessageWidgetState();
 }
 
 class _ChatMessageWidgetState extends State<ChatMessageWidget>
@@ -29,7 +29,6 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget>
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     )..repeat();
-
     // Animate between 0, 1, 2 to control number of dots (..., .., .)
     _dotAnimation = IntTween(begin: 0, end: 2).animate(
       CurvedAnimation(
@@ -43,6 +42,54 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget>
   void dispose() {
     _animationController.dispose();
     super.dispose();
+  }
+
+  // Parse text and build rich text with formatting
+  Widget _buildFormattedText(String text, Color textColor) {
+    // Split text by bold markers (**)
+    final List<String> parts = [];
+    final List<bool> isBold = [];
+
+    // Process text format
+    RegExp exp = RegExp(r'\*\*([^*]+)\*\*');
+    int lastIndex = 0;
+
+    for (final match in exp.allMatches(text)) {
+      if (match.start > lastIndex) {
+        // Add regular text before this match
+        parts.add(text.substring(lastIndex, match.start));
+        isBold.add(false);
+      }
+
+      // Add bold text (without ** markers)
+      parts.add(match.group(1)!);
+      isBold.add(true);
+
+      lastIndex = match.end;
+    }
+
+    // Add remaining text after last match
+    if (lastIndex < text.length) {
+      parts.add(text.substring(lastIndex));
+      isBold.add(false);
+    }
+
+    // Build RichText spans
+    final List<TextSpan> spans = [];
+    for (int i = 0; i < parts.length; i++) {
+      spans.add(TextSpan(
+        text: parts[i],
+        style: TextStyle(
+          color: textColor,
+          fontSize: 16,
+          fontWeight: isBold[i] ? FontWeight.bold : FontWeight.w400,
+        ),
+      ));
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
+    );
   }
 
   @override
@@ -80,13 +127,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget>
                       );
                     },
                   )
-                : Text(
+                : _buildFormattedText(
                     widget.message.text,
-                    style: TextStyle(
-                      color: isUser ? AppColors.textPrimary : AppColors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                    ),
+                    isUser ? AppColors.textPrimary : AppColors.white,
                   ),
             if (!isUser && !widget.message.isLoading) ...[
               const SizedBox(height: 8),
